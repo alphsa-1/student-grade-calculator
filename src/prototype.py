@@ -161,7 +161,7 @@ def add_new_subject(user_id):
 def view_quarter(user_id):
     quarter_choice = int(input("Which quarter do you want to view? (1/2/3/4)\n"))
     global window
-    quarter_table_window(user_id, quarter_choice)
+    quarter_table_window()
     refresh_quarter_table(user_id)
     first_choice = input("Would you like to edit a subject's assessments? (P [PICK]/B [BACK])").lower()
     if first_choice == "B":
@@ -273,7 +273,7 @@ def sequence(user_id):
 
     terminal_thread = threading.Thread(
         target=terminal_sequence,
-        args=(user_id, window, table),
+        args=(user_id, window),
         daemon=True
     )
     terminal_thread.start()
