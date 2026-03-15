@@ -3,12 +3,21 @@ import json
 with open("users.json", "r") as f:
     users = json.load(f)
 
+def message(auth_val):
+    match auth_val:
+        case 0: print("Username not found!")
+        case 1: print("Incorrect password.")
+        case 2: print("Login successful!")
+
 def auth(username, password):
     global users
     if username not in users:
-        return 0
+        message(0)
+        return False
     
     if users[username]["password"] == password:
-        return 2
+        message(2)
+        return True
     else:
-        return 1
+        message(1)
+        return False
