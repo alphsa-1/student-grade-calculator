@@ -110,17 +110,23 @@ def create_blank_subject(name, unit):
         "unit": unit,
         "assessments": {
             "SA": {
-                "percentage": 0.70,
+                "percentage": None,
                 "categories": {}
             },
             "FA": {
-                "percentage": 0.30,
+                "percentage": None,
                 "categories": {}
             }
         },
         "grade": None,
         "remarks": None
     }
+
+def is_subject_new(subject):
+    return (
+        subject["assessments"]["SA"]["percentage"] is None or
+        subject["assessments"]["FA"]["percentage"] is None
+    )
 
 ## GUI WINDOW
 def table_ui():
