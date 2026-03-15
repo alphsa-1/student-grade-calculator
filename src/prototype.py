@@ -1,5 +1,6 @@
 import json
 
+# json file helpers
 def load_json(filename):
     with open(filename, "r") as file:
         return json.load(file)
@@ -8,21 +9,34 @@ def save_json(filename, data):
     with open(filename, "w") as file:
         return json.load(data, file, indent=4)
 
-def message(auth_val):
-    match auth_val:
-        case 0: print("Username not found!")
-        case 1: print("Incorrect password.")
-        case 2: print("Login successful!")
-
 def auth(username, password):
     users = load_json("src/users.json")
+
+    # If the username does not exist, will print so
     if username not in users:
-        message(0)
+        print("Username not found!")
         return False
     
+    # If the password matches with the username, returns True and continues the program
     if users[username]["password"] == password:
-        message(2)
+        print("Login successful!")
         return True
     else:
-        message(1)
+        print("Incorrect password.")
         return False
+
+def signup(username, password):
+    users = load_json("src/users.json")
+
+    if username in users:
+        print("Username already exist!")
+        return False
+
+    # Gets the id before the new user
+    if not users: return 1
+    highest_id = max(user_id["_id"] for user_id in users.values())
+
+    # Creates the new user
+    users[username] = {"_id": highest_id + 1, "password": password}
+
+    save_json("src/users.json", users)
