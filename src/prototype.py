@@ -1,6 +1,6 @@
 import json
 
-with open("users.json", "r") as f:
+with open("src/users.json", "r") as f:
     users = json.load(f)
 
 def message(auth_val):
@@ -21,3 +21,5 @@ def auth(username, password):
     else:
         message(1)
         return False
+    
+auth("john", "pass123")

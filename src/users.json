@@ -1,0 +1,6 @@
+{
+    "john": {
+        "_id": 1,
+        "password": "pass123"
+    }
+}
