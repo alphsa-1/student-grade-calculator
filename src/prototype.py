@@ -173,7 +173,14 @@ def view_quarter(user_id):
             subject_choice = input("Which subject do you want to edit?\n").title()
         
             if subject_choice not in [subject["name"] for subject in get_user_data(user_id)["subjects"]]:
-                continue
+                print(bcolors.BADRED + "Subject not found!" + bcolors.ENDC)
+                return_choice = input("Return to homepage? (Y/N)\n").upper()
+                if return_choice == "Y":
+                    quarter_window.after(0, quarter_window.destroy)
+                    terminal_sequence(user_id, window)
+                else:
+                    print("/n")
+                    continue
             else:
                 assessments_view(user_id)
 
