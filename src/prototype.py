@@ -112,7 +112,7 @@ def create_blank_user_data(user_id):
     }
 
 def create_subject(user_id, name, unit):
-    user_data = get_user_data[user_id]
+    user_data = get_user_data(user_id)
     user_data["subjects"].append(
         {
             "name": name,
