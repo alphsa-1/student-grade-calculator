@@ -224,7 +224,7 @@ def sequence(user_id):
 
     window.mainloop()
 def main():
-    if user_id := auth_sequence() and user_id is not None:
+    if user_id := auth_sequence():
         sequence(user_id)
 
 main()
