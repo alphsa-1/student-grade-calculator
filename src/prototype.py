@@ -14,22 +14,22 @@ def auth(username, password):
 
     # If the username does not exist, will print so
     if username not in users:
-        print("\nUsername not found!")
+        print("Username not found!")
         return False
     
     # If the password matches with the username, returns True and continues the program
     if users[username]["password"] == password:
-        print("\nLogin successful!")
+        print("Login successful!")
         return True
     else:
-        print("\nIncorrect password.")
+        print("Incorrect password.")
         return False
 
 def signup(username, password):
     users = load_json("src/users.json")
 
     if username in users:
-        print("\nUsername already exist!")
+        print("Username already exist!")
         return False
 
     # Gets the id before the new user
@@ -44,21 +44,25 @@ def signup(username, password):
 
 def main():
     # Login/Signup Sequence
-    print("Hello user!\n\n")
+    print("Hello user!\n")
     user_choice = input("Would you like to log in or sign-up? (L/S)\n")
 
     if user_choice == "L":
-        username_in = input("\nUsername: ")
-        password_in = input("Password: ")
-        if auth(username_in, password_in):
-            logged_in = True
-        else:
-            logged_in = False
+        while True:
+            username_in = input("\nUsername: ")
+            password_in = input("Password: ")
+            if auth(username_in, password_in):
+                logged_in = True
+                break
+            else:
+                logged_in = False
     
     elif user_choice == "S":
-        username_in = input("\nUsername: ")
-        password_in = input("Password: ")
-        if signup(username_in, password_in):
-            logged_in = True
-        else:
-            logged_in = False
+        while True:
+            username_in = input("\nUsername: ")
+            password_in = input("Password: ")
+            if signup(username_in, password_in):
+                logged_in = True
+                break
+            else:
+                logged_in = False
