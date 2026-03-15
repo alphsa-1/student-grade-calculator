@@ -143,7 +143,7 @@ def add_new_subject(user_id):
         terminal_sequence(user_id)
     else:
         print(bcolors.OKGREEN + "Subject successfully added!" + bcolors.ENDC)
-        create_subject(subject_name, subject_unit)
+        create_subject(user_id, subject_name, subject_unit)
         # refresh_gui()
 
 def terminal_sequence(user_id):
