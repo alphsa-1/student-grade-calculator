@@ -49,7 +49,7 @@ def signup(username, password):
     print(bcolors.OKGREEN + "Signup successful!" + bcolors.ENDC)
     return True
 
-def main():
+def auth_sequence():
     # Login/Signup Sequence
     print("Hello user!\n")
     user_choice = input("Would you like to log in or sign-up? (L/S)\n")
@@ -59,19 +59,18 @@ def main():
             username_in = input("\nUsername: ")
             password_in = input("Password: ")
             if auth(username_in, password_in):
-                logged_in = True
-                break
-            else:
-                logged_in = False
+                return True
     
     elif user_choice == "S":
         while True:
             username_in = input("\nUsername: ")
             password_in = input("Password: ")
             if signup(username_in, password_in):
-                logged_in = True
-                break
-            else:
-                logged_in = False
+                return True
+
+def main():
+    if auth_sequence():
+        # program
+        pass
 
 main()
