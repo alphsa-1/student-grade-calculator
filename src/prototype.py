@@ -1,5 +1,11 @@
 import json
 
+# extra text deco
+class bcolors:
+    ENDC = '\033[0m'
+    BADRED = '\033[91m'
+    OKGREEN = '\033[92m'
+
 # json file helpers
 def load_json(filename):
     with open(filename, "r") as file:
@@ -14,22 +20,22 @@ def auth(username, password):
 
     # If the username does not exist, will print so
     if username not in users:
-        print("Username not found!")
+        print(bcolors.BADRED + "Username or password is incorrect." + bcolors.ENDC)
         return False
     
     # If the password matches with the username, returns True and continues the program
     if users[username]["password"] == password:
-        print("Login successful!")
+        print(bcolors.OKGREEN + "Login successful!" + bcolors.ENDC)
         return True
     else:
-        print("Incorrect password.")
+        print(bcolors.BADRED + "Incorrect password." + bcolors.ENDC)
         return False
 
 def signup(username, password):
     users = load_json("src/users.json")
 
     if username in users:
-        print("Username already exist!")
+        print(bcolors.BADRED + "Username already exists!" + bcolors.ENDC)
         return False
 
     # Gets the id before the new user
