@@ -1,5 +1,6 @@
 import json
 
+## HELPERS/EXTRA
 # extra text deco
 class bcolors:
     ENDC = '\033[0m'
@@ -31,6 +32,7 @@ def auth(username, password):
         print(bcolors.BADRED + "Incorrect password." + bcolors.ENDC)
         return False
 
+## HOMEPAGE AUTH
 def signup(username, password):
     users = load_json("src/users.json")
 
@@ -54,6 +56,7 @@ def auth_sequence():
     print("Hello user!\n")
     user_choice = input("Would you like to log in or sign-up? (L/S)\n")
 
+    # Self-explanatory
     if user_choice == "L":
         while True:
             username_in = input("\nUsername: ")
@@ -61,6 +64,7 @@ def auth_sequence():
             if auth(username_in, password_in):
                 return True
     
+    # Self-explanatory
     elif user_choice == "S":
         while True:
             username_in = input("\nUsername: ")
@@ -68,6 +72,7 @@ def auth_sequence():
             if signup(username_in, password_in):
                 return True
 
+## PROGRAM SEQUENCER
 def main():
     if auth_sequence():
         # program
