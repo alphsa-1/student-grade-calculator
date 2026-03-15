@@ -2,5 +2,9 @@
     "john": {
         "_id": 1,
         "password": "pass123"
+    },
+    "maru": {
+        "_id": 2,
+        "password": "321pass"
     }
 }

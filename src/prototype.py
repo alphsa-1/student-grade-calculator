@@ -46,6 +46,7 @@ def signup(username, password):
     users[username] = {"_id": highest_id + 1, "password": password}
 
     save_json("src/users.json", users)
+    print(bcolors.OKGREEN + "Signup successful!" + bcolors.ENDC)
     return True
 
 def main():
@@ -72,3 +73,5 @@ def main():
                 break
             else:
                 logged_in = False
+
+main()
