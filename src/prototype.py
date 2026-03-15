@@ -119,10 +119,10 @@ def create_subject(user_id, name, unit):
             "name": name,
             "unit": unit,
             "quarters": [
-                {"quarter": 1, "assessments": {}, "grade": None},
-                {"quarter": 2, "assessments": {}, "grade": None},
-                {"quarter": 3, "assessments": {}, "grade": None},
-                {"quarter": 4, "assessments": {}, "grade": None}
+                {"quarter": 1, "assessments": {}, "grade": None, "passed": None},
+                {"quarter": 2, "assessments": {}, "grade": None, "passed": None},
+                {"quarter": 3, "assessments": {}, "grade": None, "passed": None},
+                {"quarter": 4, "assessments": {}, "grade": None, "passed": None}
             ],
             "final": None,
             "classification": None
@@ -137,36 +137,86 @@ def is_subject_new(subject_name, user_id):
         return True
 
 # main
+def get_quarter_data(user_id, quarter):
+    user_data = get_user_data(user_id)
 
+    subjects = []
+    for subject in user_data["subjects"]:
+        subjects.append(subject["quarters"][quarter - 1])
+    
+    return subjects
+            
 ## GUI (TERMINAL)
 def add_new_subject(user_id):
+    global window
     subject_name = input("Subject name: ")
     subject_unit = float(input("Subject unit: "))
     if not is_subject_new(subject_name, user_id):
-        terminal_sequence(user_id)
+        terminal_sequence(user_id, window)
     else:
         print(bcolors.OKGREEN + "Subject successfully added!" + bcolors.ENDC)
         create_subject(user_id, subject_name, subject_unit)
-        # refresh_gui()
+        refresh_table(user_id)
 
-def terminal_sequence(user_id, window, table):
+def view_quarter(user_id):
+    quarter_choice = int(input("Which quarter do you want to view? (1/2/3/4)\n"))
+    global window
+    quarter_table_window(user_id, quarter_choice)
+    refresh_quarter_table(user_id)
+    first_choice = input("Would you like to edit a subject's assessments? (P [PICK]/B [BACK])").lower()
+    if first_choice == "B":
+        quarter_window.after(0, quarter_window.destroy)
+        terminal_sequence(user_id, window)
+
+    if first_choice == "P":
+        while True:
+            subject_choice = input("Which subject do you want to edit?").lower()
+        
+            if subject_choice not in [subject["name"] for subject in get_user_data(user_id)["subjects"]]:
+                continue
+            else:
+                assessments_view(user_id)
+
+def assessments_view(user_id):
+    pass
+
+def terminal_sequence(user_id, window):
     while True:
-        print("(Check the window for reference!)")
+        print("(Check the window opened for reference!)")
         choice = input("Do you want to add a new subject or edit a quarter's assessments? (S/Q/X)\n").upper()
 
         if choice == "S":
             add_new_subject(user_id)
-            window.after(0, lambda: refresh_table(user_id, table))
+            window.after(0, lambda: refresh_table(user_id))
 
         elif choice == "Q":
-            pass
+            view_quarter(user_id)
 
         elif choice == "X":
             window.after(0, window.destroy)
             break
 
 ## GUI (WINDOW)
-def refresh_table(user_id, table):
+def refresh_quarter_table(user_id, quarter):
+    global quarter_table
+    for row in quarter_table.get_children():
+        table.delete(row)
+    
+    user_data = get_user_data(user_id)
+    quarter_data = get_quarter_data(user_id, quarter)
+    for subject, quarter in zip(user_data["subjects"], quarter_data):
+        name = subject["name"]
+        grade = quarter_data["grade"]
+        passed = quarter_data["passed"]
+        quarter_table.insert("", tk.END, values=(name, grade, passed))
+
+def quarter_table_window():
+    global window, quarter_window, quarter_table
+    quarter_window = tk.Toplevel(window)
+    quarter_table = build_table(quarter_window, ("Subject", "Grade", "Remarks"))
+
+def refresh_table(user_id):
+    global table
     for row in table.get_children():
         table.delete(row)
     
@@ -177,15 +227,17 @@ def refresh_table(user_id, table):
         grades = [quarter["grade"] for quarter in subject["quarters"]]
         final = subject["final"]
         classification = subject["classification"]
-        row_data = grades.insert(0, name).append(final, unit, classification)
+        row_data = grades.copy()
+        row_data.insert(0, name)
+        row_data.append(final)
+        row_data.append(unit)
+        row_data.append(classification)
         table.insert("", tk.END, values=row_data)
 
 
-def build_table(window):
+def build_table(window, columns):
     table_frame = tk.Frame(window)
     table_frame.pack(expand=True)
-
-    columns = ("Subject", "Q1", "Q2", "Q3", "Q4", "Final", "Unit", "Classification")
 
     table = ttk.Treeview(
         table_frame,
@@ -210,10 +262,14 @@ def build_table(window):
 
 ## PROGRAM SEQUENCER
 def sequence(user_id):
+    global window
     # Prompted GPT on how to multi-thread tk window and terminal interaction
     window = tk.Tk()
     window.title("Report Card Table")
-    table = build_table(window)
+
+    global table
+    table = build_table(window, ("Subject", "Q1", "Q2", "Q3", "Q4", "Final", "Unit", "Classification"))
+    refresh_table(user_id)
 
     terminal_thread = threading.Thread(
         target=terminal_sequence,
