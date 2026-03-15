@@ -149,7 +149,7 @@ def get_quarter_data(user_id, quarter):
 ## GUI (TERMINAL)
 def add_new_subject(user_id):
     global window
-    subject_name = input("Subject name: ")
+    subject_name = input("Subject name: ").title()
     subject_unit = float(input("Subject unit: "))
     if not is_subject_new(subject_name, user_id):
         terminal_sequence(user_id, window)
@@ -163,14 +163,14 @@ def view_quarter(user_id):
     global window
     quarter_table_window()
     refresh_quarter_table(user_id, quarter_choice)
-    first_choice = input("Would you like to edit a subject's assessments? (P [PICK]/B [BACK])").lower()
+    first_choice = input("Would you like to edit a subject's assessments? (P [PICK]/B [BACK])\n").upper()
     if first_choice == "B":
         quarter_window.after(0, quarter_window.destroy)
         terminal_sequence(user_id, window)
 
     if first_choice == "P":
         while True:
-            subject_choice = input("Which subject do you want to edit?").lower()
+            subject_choice = input("Which subject do you want to edit?\n").title()
         
             if subject_choice not in [subject["name"] for subject in get_user_data(user_id)["subjects"]]:
                 continue
