@@ -13,7 +13,7 @@ def load_json(filename):
 
 def save_json(filename, data):
     with open(filename, "w") as file:
-        return json.load(data, file, indent=4)
+        return json.save(data, file, indent=4)
 
 def auth(username, password):
     users = load_json("src/users.json")
