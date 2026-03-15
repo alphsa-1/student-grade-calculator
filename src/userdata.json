@@ -1,54 +1,10 @@
 {
     "1": {
         "quarters": [
-            {
-                "semester": 1,
-                "subjects": [
-                    {
-                        "name": "Mathematics",
-                        "assessments": {
-                            "SA": {
-                                "percentage": 0.70,
-                                "categories": {
-                                    "project": {
-                                        "percentage": 0.15,
-                                        "assessments": [
-                                            0.70,
-                                            0.85
-                                        ]
-                                    }
-                                },
-                                "long_test": 0.85
-                            },
-                            "FA": {
-                                "percentage": 0.30,
-                                "categories": {
-                                    "quiz": {
-                                        "percentage": 0.60,
-                                        "assessments": [
-                                            1,
-                                            0.95,
-                                            0.95,
-                                            1
-                                        ]
-                                    },
-                                    "hands_on": {
-                                        "percentage": 0.40,
-                                        "assessments": [
-                                            0.80,
-                                            0.80
-                                        ]
-                                    }
-                                }
-                            }
-                        },
-                        "grade": null,
-                        "remarks": null
-                    }
-                ],
-                "grade": null,
-                "unit": null
-            }
+            {"quarter": 1, "subjects": []},
+            {"quarter": 2, "subjects": []},
+            {"quarter": 3, "subjects": []},
+            {"quarter": 4, "subjects": []}
         ]
     }
 }
