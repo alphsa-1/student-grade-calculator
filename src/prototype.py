@@ -123,7 +123,9 @@ def create_subject(user_id, name, unit):
                 {"quarter": 2, "assessments": {}, "grade": None},
                 {"quarter": 3, "assessments": {}, "grade": None},
                 {"quarter": 4, "assessments": {}, "grade": None}
-            ]
+            ],
+            "final": None,
+            "classification": None
         }
     )
     save_user_data(user_id, user_data)
@@ -164,10 +166,22 @@ def terminal_sequence(user_id, window, table):
             break
 
 ## GUI (WINDOW)
-def refresh_table():
-    pass
+def refresh_table(user_id, table):
+    for row in table.get_children():
+        table.delete(row)
+    
+    user_data = get_user_data(user_id)
+    for subject in user_data["subjects"]:
+        name = subject["name"]
+        unit = subject["unit"]
+        grades = [quarter["grade"] for quarter in subject["quarters"]]
+        final = subject["final"]
+        classification = subject["classification"]
+        row_data = grades.insert(0, name).append(final, unit, classification)
+        table.insert("", tk.END, values=row_data)
 
-def build_table(window, user_id):
+
+def build_table(window):
     table_frame = tk.Frame(window)
     table_frame.pack(expand=True)
 
@@ -192,11 +206,14 @@ def build_table(window, user_id):
     table.configure(yscroll=scrollbar.set)
     scrollbar.pack(side="right", fill="y")
 
+    return table
+
 ## PROGRAM SEQUENCER
 def sequence(user_id):
     # Prompted GPT on how to multi-thread tk window and terminal interaction
     window = tk.Tk()
-    table = build_table(window, user_id)
+    window.title("Report Card Table")
+    table = build_table(window)
 
     terminal_thread = threading.Thread(
         target=terminal_sequence,
