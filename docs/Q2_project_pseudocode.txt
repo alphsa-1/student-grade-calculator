@@ -1,0 +1,187 @@
+START PROGRAM
+CALL LoginUser()
+LOAD UserData
+WHILE user is logged in
+	DISPLAY HomePage # (report card table)
+	DISPLAY Tutorial and Tips
+	
+	WAIT FOR user action
+
+	IF user clicks "Add Subject"
+		CALL AddSubject()
+	END IF
+	IF user selects a Quarter
+		CALL OpenQuarterView(selectedQuarter)
+	END IF
+	IF user click "View Summary"
+		CALL GenerateSummary()
+	END IF
+	IF user logs out
+		SAVE UserData
+		EXIT LOOP
+	END IF
+END WHILE
+END PROGRAM
+
+FUNCTION LoginUser()
+	DISPLAY login form
+
+	IF credentials are valid
+		LOAD UserData
+	ELSE
+		DISPLAY error message
+		RETRY login
+	END IF
+END FUNCTION
+
+FUNCTION AddSubject()
+	PROMPT subjectName
+	PROMPT subjectUnit
+
+	CREATE newSubject
+		newSubject.name = subjectName
+		newSubject.unit = subjectUnit
+		newSubject.grades[1..4] = EMPTY
+		newSubject.assesments[1..4] = EMPTY
+
+	ADD newSubject to SubjectList
+	SAVE UserData
+END FUNCTION
+
+FUNCTION OpenQuarterView(quarter)
+	FOR EACH subject IN SubjectList
+		IF subject.grades[quarter] is EMPTY
+		DISPLAY redExclamationMark
+		END IF
+	END FOR
+
+	WAIT FOR user to select a subject
+
+	IF subject clicked
+		CALL EnterAssessments(subject, quarter)
+	END IF
+END FUNCTION
+
+FUNCTION EnterAssesments(subject, quarter)
+	DISPLAY AssessmentForm FOR subject AND quarter
+	# Form shows SA and FA sections with input for percentage weight
+	# User can edit percentages
+	
+	WAIT FOR user to fill out the form
+
+	# Layer 1: Fixed categories summative assesments and formative assesments
+	FOR EACH category in [SA, FA]
+		GET category.percentage, category.subCategories FROM AssessmentForm
+		categoryWeightedScore = 0
+		
+		# Layer 2: User-defined sub-categories (user can dynamically add/remove)
+		FOR EACH subCategory IN category.subCategories
+			# subCategory has name/label, and its own percentage wieght within the category (user-defined)
+			GET subCategory.assessments, subCategory.percentage FROM AssessmentForm
+
+			subTotalScore = 0
+			subTotalMax = 0
+
+			# Layer 3: Individual assessments (user can dynamically add/remove)
+			FOR EACH assessment IN subCategory.assessments
+				# assessment has name/label, scoreObtained, and scoreMaximum
+				
+				subTotalScore += GET assessment.scoreObtained FROM AssessmentsForm
+				subTotalMax += GET assessment.scoreMaximum FROM AssessmentsForm
+			END FOR
+			
+			IF subTotalMax > 0
+				subCategoryAverage = subTotalScore / subTotalMax
+				weightedSubCategoryScore = subCategoryAverage * (subCategory.percentage / 100)
+				categoryWeightedScore += weightedSubCategoryScore
+			END IF
+		END FOR # end of sub-categories (layer 2)
+		
+		# Apply category weight (Layer 1) to total category score
+		totalCategoryScore = categoryWeightedScore * (category.percentage / 100)
+		totalGrade += totalCategoryScore
+
+	END FOR # end of summative and formative assessments categories (layer 1)
+
+	tentativeGrade = totalGrade
+
+	IF quarter == 1
+		subject.grades[quarter] = tentativeGrade
+	ELSE
+		previousGrade = subject.grades[quarter - 1]
+		subject.grades[quarter] = ((tentativeGrade * 2) + previousGrade) / 3
+	END IF
+	
+	subject.passing[quarter] = (subject.grades[quarter] >= passingGrade)
+
+	SAVE UserData
+	DISPLAY UpdatedQuarterTable(subject, quarter)
+END FUNCTION
+
+FUNCTION ComputeGWA(quarter)
+	totalWeightedGrades = 0
+	totalUnits = 0
+	incomplete = FALSE
+
+	FOR EACH subject in SubjectList
+		IF subject.grades[quarter] is NOT EMPTY
+			totalWeightedGrades += subject.grades[quarter] * subject.units
+			totalUnits += subject.units
+		ELSE
+			incomplete = TRUE
+		END IF
+	END FOR
+
+	IF totalUnits > 0
+		gwa = totalWeightedGrades / totalUnits
+	ELSE
+		gwa = EMPTY
+	END IF
+
+	DISPLAY gwa
+
+	IF incomplete == TRUE
+		DISPLAY yellowWarning("Not all subjects have grades yet")
+	END IF
+
+	CALL DetermineClassification(gwa)
+END FUNCTION
+
+FUNCTION DetermineCLassification(gwa)
+	IF gwa >= 84 # 1.50
+		classification = "Director's Lister"
+	ELSE IF gwa >= 60 # 2.50
+		classification = "Standard"
+	ELSE IF gwa >= 50 # 3.00
+		classification = "Sub-standard"
+	ELSE IF gwa >= 40 # 4.00
+		classification = "Probation"
+	ELSE # 5.00
+		classification = "Failed"
+	END IF
+
+	DISPLAY classification
+END FUNCTION
+
+# (Optional)
+FUNCTION PredictMissingGrades(subject)
+	knownQuarters = list of quarters with grades
+
+	IF length(knownQuarters) > 2
+		COMPUTE linearTrend from known grades
+
+		FOR quarter FROM 1 to 4
+			IF subject.grades[quarter] is EMPTY
+				subject.predictedGrades[quarter]
+			END IF
+		END FOR
+	END IF
+END FUNCTION
+
+FUNCTION GenerateSummary()
+	strongestSubject = subject with highest average
+	weakestSubject = subject with lowest average
+
+	DISPLAY strongestSubject, weakestSubject
+	DISPLAY studyTips based on weakestSubject
+END FUNCTION
