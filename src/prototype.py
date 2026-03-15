@@ -15,7 +15,7 @@ def message(auth_val):
         case 2: print("Login successful!")
 
 def auth(username, password):
-    global users
+    users = load_json("src/users.json")
     if username not in users:
         message(0)
         return False
