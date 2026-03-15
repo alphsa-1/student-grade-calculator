@@ -1,10 +1,10 @@
 {
     "1": {
-        "quarters": [
-            {"quarter": 1, "subjects": []},
-            {"quarter": 2, "subjects": []},
-            {"quarter": 3, "subjects": []},
-            {"quarter": 4, "subjects": []}
+        "subjects": [
+            {"quarter": 1, "assesments": [], "grade": null, "unit": null},
+            {"quarter": 2, "assesments": [], "grade": null, "unit": null},
+            {"quarter": 3, "assesments": [], "grade": null, "unit": null},
+            {"quarter": 4, "assesments": [], "grade": null, "unit": null}
         ]
     }
 }
