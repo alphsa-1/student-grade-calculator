@@ -14,22 +14,22 @@ def auth(username, password):
 
     # If the username does not exist, will print so
     if username not in users:
-        print("Username not found!")
+        print("\nUsername not found!")
         return False
     
     # If the password matches with the username, returns True and continues the program
     if users[username]["password"] == password:
-        print("Login successful!")
+        print("\nLogin successful!")
         return True
     else:
-        print("Incorrect password.")
+        print("\nIncorrect password.")
         return False
 
 def signup(username, password):
     users = load_json("src/users.json")
 
     if username in users:
-        print("Username already exist!")
+        print("\nUsername already exist!")
         return False
 
     # Gets the id before the new user
@@ -40,3 +40,25 @@ def signup(username, password):
     users[username] = {"_id": highest_id + 1, "password": password}
 
     save_json("src/users.json", users)
+    return True
+
+def main():
+    # Login/Signup Sequence
+    print("Hello user!\n\n")
+    user_choice = input("Would you like to log in or sign-up? (L/S)\n")
+
+    if user_choice == "L":
+        username_in = input("\nUsername: ")
+        password_in = input("Password: ")
+        if auth(username_in, password_in):
+            logged_in = True
+        else:
+            logged_in = False
+    
+    elif user_choice == "S":
+        username_in = input("\nUsername: ")
+        password_in = input("Password: ")
+        if signup(username_in, password_in):
+            logged_in = True
+        else:
+            logged_in = False
