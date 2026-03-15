@@ -18,61 +18,59 @@ def save_json(filename, data):
     with open(filename, "w") as file:
         return json.dump(data, file, indent=4)
 
+## HOMEPAGE AUTH
 def auth(username, password):
     users = load_json("src/users.json")
 
-    # If the username does not exist, will print so
     if username not in users:
         print(bcolors.BADRED + "Username or password is incorrect." + bcolors.ENDC)
-        return False
-    
-    # If the password matches with the username, returns True and continues the program
+        return None
+
     if users[username]["password"] == password:
         print(bcolors.OKGREEN + "Login successful!" + bcolors.ENDC)
-        return True
-    else:
-        print(bcolors.BADRED + "Incorrect password." + bcolors.ENDC)
-        return False
+        return users[username]["_id"]
 
-## HOMEPAGE AUTH
+    print(bcolors.BADRED + "Incorrect password." + bcolors.ENDC)
+    return None
+
 def signup(username, password):
     users = load_json("src/users.json")
 
     if username in users:
         print(bcolors.BADRED + "Username already exists!" + bcolors.ENDC)
-        return False
+        return None
 
-    # Gets the id before the new user
-    if not users: return 1
-    highest_id = max(user_id["_id"] for user_id in users.values())
+    if not users:
+        new_id = 1
+    else:
+        highest_id = max(user_data["_id"] for user_data in users.values())
+        new_id = highest_id + 1
 
-    # Creates the new user
-    users[username] = {"_id": highest_id + 1, "password": password}
-
+    users[username] = {"_id": new_id, "password": password}
     save_json("src/users.json", users)
+
     print(bcolors.OKGREEN + "Signup successful!" + bcolors.ENDC)
-    return True
+    return new_id
 
 def auth_sequence():
-    # Login/Signup Sequence
     print("Hello user!\n")
-    user_choice = input("Would you like to log in or sign-up? (L/S)\n")
+    user_choice = input("Would you like to log in or sign-up? (L/S)\n").upper()
 
-    # Self-explanatory
     if user_choice == "L":
         while True:
             username_in = input("\nUsername: ")
             password_in = input("Password: ")
-            if auth(username_in, password_in):
-                return True
-    
-    # Self-explanatory
+            user_id = auth(username_in, password_in)
+            if user_id is not None:
+                return user_id
+
     elif user_choice == "S":
         while True:
             username_in = input("\nUsername: ")
             password_in = input("Password: ")
-            if signup(username_in, password_in):
-                return True
+            user_id = signup(username_in, password_in)
+            if user_id is not None:
+                return user_id
 
 ## GUI WINDOW
 def table_ui():
