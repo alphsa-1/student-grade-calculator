@@ -162,7 +162,7 @@ def view_quarter(user_id):
     quarter_choice = int(input("Which quarter do you want to view? (1/2/3/4)\n"))
     global window
     quarter_table_window()
-    refresh_quarter_table(user_id)
+    refresh_quarter_table(user_id, quarter_choice)
     first_choice = input("Would you like to edit a subject's assessments? (P [PICK]/B [BACK])").lower()
     if first_choice == "B":
         quarter_window.after(0, quarter_window.destroy)
@@ -206,8 +206,8 @@ def refresh_quarter_table(user_id, quarter):
     quarter_data = get_quarter_data(user_id, quarter)
     for subject, quarter in zip(user_data["subjects"], quarter_data):
         name = subject["name"]
-        grade = quarter_data["grade"]
-        passed = quarter_data["passed"]
+        grade = quarter_data[0]["grade"]
+        passed = quarter_data[0]["passed"]
         quarter_table.insert("", tk.END, values=(name, grade, passed))
 
 def quarter_table_window():
