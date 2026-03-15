@@ -1,6 +1,7 @@
 import json
 import tkinter as tk
 from tkinter import ttk
+import threading
 
 ## HELPERS/EXTRA
 # extra text deco
@@ -146,23 +147,31 @@ def add_new_subject(user_id):
         create_subject(user_id, subject_name, subject_unit)
         # refresh_gui()
 
-def terminal_sequence(user_id):
-    print("(Check the windows opened for reference!)")
-    report_card_choice = input("Do you want to add a new subject or edit a quarter's assessments? (S/Q)\n").upper()
+def terminal_sequence(user_id, window, table):
+    while True:
+        print("(Check the window for reference!)")
+        choice = input("Do you want to add a new subject or edit a quarter's assessments? (S/Q/X)\n").upper()
 
-    if report_card_choice == "S":
-        add_new_subject(user_id)
+        if choice == "S":
+            add_new_subject(user_id)
+            window.after(0, lambda: refresh_table(user_id, table))
+
+        elif choice == "Q":
+            pass
+
+        elif choice == "X":
+            window.after(0, window.destroy)
+            break
 
 ## GUI (WINDOW)
-def table_ui():
-    window = tk.Tk()
-    window.title("Report Card Table")
-    
-    # Everything below except window.mainloop() is from prompting Chat-GPT "how to make table using tkinter python"
+def refresh_table():
+    pass
+
+def build_table(window, user_id):
     table_frame = tk.Frame(window)
     table_frame.pack(expand=True)
 
-    columns = ("Subject", "Grade", "Unit", "Remarks")
+    columns = ("Subject", "Q1", "Q2", "Q3", "Q4", "Final", "Unit", "Classification")
 
     table = ttk.Treeview(
         table_frame,
@@ -173,31 +182,32 @@ def table_ui():
 
     for column in columns:
         table.heading(column, text=column)
-        table.column(column, anchor="center", width=150)
+        if len(column) > 2:
+            table.column(column, anchor="center", width=200)
+        else:
+            table.column(column, anchor="center", width=50)
     
-    # sample data
-    data = [
-        ("Math", "95", "Excellent"),
-        ("Science", "89", "Very Good"),
-        ("English", "92", "Very Good"),
-        ("Filipino", "88", "Good"),
-        ("PE", "97", "Outstanding")
-    ]
-
-    for row in data:
-        table.insert("", tk.END, values=row)
-
     table.pack()
-
     scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=table.yview)
     table.configure(yscroll=scrollbar.set)
     scrollbar.pack(side="right", fill="y")
 
-    window.mainloop()
-
 ## PROGRAM SEQUENCER
+def sequence(user_id):
+    # Prompted GPT on how to multi-thread tk window and terminal interaction
+    window = tk.Tk()
+    table = build_table(window, user_id)
+
+    terminal_thread = threading.Thread(
+        target=terminal_sequence,
+        args=(user_id, window, table),
+        daemon=True
+    )
+    terminal_thread.start()
+
+    window.mainloop()
 def main():
-    if user_id := auth_sequence():
-        terminal_sequence(user_id)
+    if user_id := auth_sequence() and user_id is not None:
+        sequence(user_id)
 
 main()
