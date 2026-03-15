@@ -119,10 +119,10 @@ def create_subject(user_id, name, unit):
             "name": name,
             "unit": unit,
             "quarters": [
-                {"quarter": 1, "assessments": {}, "grade": None, "passed": None},
-                {"quarter": 2, "assessments": {}, "grade": None, "passed": None},
-                {"quarter": 3, "assessments": {}, "grade": None, "passed": None},
-                {"quarter": 4, "assessments": {}, "grade": None, "passed": None}
+                {"quarter": i + 1, "assessments": {"SA": {"percentage": None, "categories": {}},
+                                                   "FA": {"percentage": None, "categories":{}}
+                                                   }, "grade": None, "passed": None}
+                for i in range(4)
             ],
             "final": None,
             "classification": None
