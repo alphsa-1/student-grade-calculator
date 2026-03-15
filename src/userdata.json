@@ -1,15 +1,5 @@
 {
     "1": {
-        "subjects": [
-            {
-                "name": "Mathematics",
-                "quarters": [
-                    {"quarter": 1, "assesments": [], "grade": null, "unit": null},
-                    {"quarter": 2, "assesments": [], "grade": null, "unit": null},
-                    {"quarter": 3, "assesments": [], "grade": null, "unit": null},
-                    {"quarter": 4, "assesments": [], "grade": null, "unit": null}
-                ]
-            }
-        ]
+        "subjects": []
     }
 }

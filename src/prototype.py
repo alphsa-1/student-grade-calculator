@@ -27,7 +27,7 @@ def auth(username, password):
         return None
 
     if users[username]["password"] == password:
-        print(bcolors.OKGREEN + "Login successful!" + bcolors.ENDC)
+        print(bcolors.OKGREEN + "Login successful!\n" + bcolors.ENDC)
         return users[username]["_id"]
 
     print(bcolors.BADRED + "Incorrect password." + bcolors.ENDC)
@@ -64,7 +64,7 @@ def signup(username, password):
     save_json("src/users.json", users)
     create_blank_userdata(new_id)
 
-    print(bcolors.OKGREEN + "Signup successful!" + bcolors.ENDC)
+    print(bcolors.OKGREEN + "Signup successful!\n" + bcolors.ENDC)
     return new_id
 
 def auth_sequence():
@@ -104,31 +104,56 @@ def get_quarter(user_data, quarter_number):
             return quarter
     return None
 
-def create_blank_subject(name, unit):
+def create_blank_user_data(user_id):
     return {
-        "name": name,
-        "unit": unit,
-        "assessments": {
-            "SA": {
-                "percentage": None,
-                "categories": {}
-            },
-            "FA": {
-                "percentage": None,
-                "categories": {}
-            }
-        },
-        "grade": None,
-        "remarks": None
+        str(user_id): {
+            "subjects": []
+        }
     }
 
-def is_subject_new(subject):
-    return (
-        subject["assessments"]["SA"]["percentage"] is None or
-        subject["assessments"]["FA"]["percentage"] is None
+def create_subject(user_id, name, unit):
+    user_data = get_user_data[user_id]
+    user_data["subjects"].append(
+        {
+            "name": name,
+            "unit": unit,
+            "quarters": [
+                {"quarter": 1, "assessments": {}, "grade": None},
+                {"quarter": 2, "assessments": {}, "grade": None},
+                {"quarter": 3, "assessments": {}, "grade": None},
+                {"quarter": 4, "assessments": {}, "grade": None}
+            ]
+        }
     )
+    save_user_data(user_id, user_data)
 
-## GUI WINDOW
+def is_subject_new(subject_name, user_id):
+    if any(subject_name == subject["name"] for subject in get_user_data(user_id)["subjects"]):
+        return False
+    else:
+        return True
+
+# main
+
+## GUI (TERMINAL)
+def add_new_subject(user_id):
+    subject_name = input("Subject name: ")
+    subject_unit = float(input("Subject unit: "))
+    if not is_subject_new(subject_name, user_id):
+        terminal_sequence(user_id)
+    else:
+        print(bcolors.OKGREEN + "Subject successfully added!" + bcolors.ENDC)
+        save_user_data(user_id, )
+        # refresh_gui()
+
+def terminal_sequence(user_id):
+    print("(Check the windows opened for reference!)")
+    report_card_choice = input("Do you want to add a new subject or edit a quarter's assessments? (S/Q)\n").upper()
+
+    if report_card_choice == "S":
+        add_new_subject(user_id)
+
+## GUI (WINDOW)
 def table_ui():
     window = tk.Tk()
     window.title("Report Card Table")
@@ -172,7 +197,7 @@ def table_ui():
 
 ## PROGRAM SEQUENCER
 def main():
-    if auth_sequence():
-        table_ui()
+    if user_id := auth_sequence():
+        terminal_sequence(user_id)
 
 main()
