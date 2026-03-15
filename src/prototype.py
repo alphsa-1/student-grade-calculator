@@ -1,4 +1,6 @@
 import json
+import tkinter as tk
+from tkinter import ttk
 
 ## HELPERS/EXTRA
 # extra text deco
@@ -72,10 +74,51 @@ def auth_sequence():
             if signup(username_in, password_in):
                 return True
 
+## GUI WINDOW
+def table_ui():
+    window = tk.Tk()
+    window.title("Report Card Table")
+    
+    # Everything below except window.mainloop() is from prompting Chat-GPT "how to make table using tkinter python"
+    table_frame = tk.Frame(window)
+    table_frame.pack(expand=True)
+
+    columns = ("Subject", "Grade", "Unit", "Remarks")
+
+    table = ttk.Treeview(
+        table_frame,
+        columns=columns,
+        show="headings",
+        height=8
+    )
+
+    for column in columns:
+        table.heading(column, text=column)
+        table.column(column, anchor="center", width=150)
+    
+    # sample data
+    data = [
+        ("Math", "95", "Excellent"),
+        ("Science", "89", "Very Good"),
+        ("English", "92", "Very Good"),
+        ("Filipino", "88", "Good"),
+        ("PE", "97", "Outstanding")
+    ]
+
+    for row in data:
+        table.insert("", tk.END, values=row)
+
+    table.pack()
+
+    scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=table.yview)
+    table.configure(yscroll=scrollbar.set)
+    scrollbar.pack(side="right", fill="y")
+
+    window.mainloop()
+
 ## PROGRAM SEQUENCER
 def main():
     if auth_sequence():
-        # program
-        pass
+        table_ui()
 
 main()
