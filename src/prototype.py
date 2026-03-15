@@ -87,6 +87,41 @@ def auth_sequence():
             if user_id is not None:
                 return user_id
 
+## DATA PARSERS
+# helpers
+def get_user_data(user_id):
+    userdata = load_json("src/userdata.json")
+    return userdata.get(str(user_id))
+
+def save_user_data(user_id, user_data):
+    userdata = load_json("src/userdata.json")
+    userdata[str(user_id)] = user_data
+    save_json("src/userdata.json", userdata)
+
+def get_quarter(user_data, quarter_number):
+    for quarter in user_data["quarters"]:
+        if quarter["quarter"] == quarter_number:
+            return quarter
+    return None
+
+def create_blank_subject(name, unit):
+    return {
+        "name": name,
+        "unit": unit,
+        "assessments": {
+            "SA": {
+                "percentage": 0.70,
+                "categories": {}
+            },
+            "FA": {
+                "percentage": 0.30,
+                "categories": {}
+            }
+        },
+        "grade": None,
+        "remarks": None
+    }
+
 ## GUI WINDOW
 def table_ui():
     window = tk.Tk()
