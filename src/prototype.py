@@ -33,6 +33,20 @@ def auth(username, password):
     print(bcolors.BADRED + "Incorrect password." + bcolors.ENDC)
     return None
 
+def create_blank_userdata(user_id):
+    userdata = load_json("src/userdata.json")
+
+    userdata[str(user_id)] = {
+        "quarters": [
+            {"quarter": 1, "subjects": []},
+            {"quarter": 2, "subjects": []},
+            {"quarter": 3, "subjects": []},
+            {"quarter": 4, "subjects": []}
+        ]
+    }
+
+    save_json("src/userdata.json", userdata)
+
 def signup(username, password):
     users = load_json("src/users.json")
 
@@ -48,6 +62,7 @@ def signup(username, password):
 
     users[username] = {"_id": new_id, "password": password}
     save_json("src/users.json", users)
+    create_blank_userdata(new_id)
 
     print(bcolors.OKGREEN + "Signup successful!" + bcolors.ENDC)
     return new_id
