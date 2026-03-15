@@ -1,7 +1,12 @@
 import json
 
-with open("src/users.json", "r") as f:
-    users = json.load(f)
+def load_json(filename):
+    with open(filename, "r") as file:
+        return json.load(file)
+
+def save_json(filename, data):
+    with open(filename, "w") as file:
+        return json.load(data, file, indent=4)
 
 def message(auth_val):
     match auth_val:
@@ -21,5 +26,3 @@ def auth(username, password):
     else:
         message(1)
         return False
-    
-auth("john", "pass123")
