@@ -224,7 +224,7 @@ def display_assessments(assessments):
     for category in assessments.keys():
         top_level = assessments[category]
         print(bcolors.SPLITCAT + f"Category {category}: " + bcolors.ENDC)
-        print(f"Percentage: {top_level["percentage"] if top_level["percentage"] is not None else 0}")
+        print(f"Percentage: {top_level["percentage"] if top_level["percentage"] is not None else '* required'}")
         print(f"Sub-categories:\n")
 
         sub_categories = top_level["categories"]
@@ -241,30 +241,75 @@ def display_assessments(assessments):
                 print(f"Maximum Score: {assessment["max_score"]}\n")
 
 def assessments_view(user_id, quarter, subject_name):
+    global window
     quarter_data = get_quarter_data(user_id, quarter)
     for subject in quarter_data:
         if subject[subject_name] is not None:
             subject_data = subject[subject_name]
             break
     else:
-        # raise exception
-        pass
+        raise LookupError
 
     assessments = subject_data["assessments"]
     display_assessments(assessments)
 
-    # ignore these, placeholders
-    for top_level_category in assessments.keys():
-        top_level = assessments[top_level_category]
-        percentage = float(input("\nPlease enter category percentage (decimal):\n"))
-        top_level["percentage"] = percentage
-        print("\nAssessments sub-categories: ")
-        
-        sub_categories = top_level["categories"]
-        for sub_category in sub_categories:
-            # parse through sub_categs then print out existing ones
-            print("debug")
-            pass
+    def percentage_prompt(category_choice, sub_category_choice = None):
+        if sub_category_choice is not None:
+            percentage = float(input(f"Enter new percentage for {sub_category_choice} under {category_choice} (0.01 to 1.00): "))
+            for category in assessments["SA" if category_choice == "S" else "FA"]["categories"]:
+                if sub_category := category[sub_category_choice] is not None:
+                    sub_category["percentage"] = percentage
+                    break
+            else:
+                print(bcolors.BADRED + "Sub-category not on list!\n" + bcolors.ENDC)
+                assessments_view(user_id, quarter, subject_name)
+
+        else:
+            percentage = float(input(f"Enter new percentage for {category_choice} (0.01 to 1.00): "))
+            assessments["SA" if category_choice == "S" else "FA"]["categories"]["percentage"] = percentage
+        save_quarter_data(user_id, quarter, quarter_data)
+
+    def assessment_choice():
+        choice = input("Would you like to edit a value or add an assessment? (E [EDIT]/ A [ADD]/B [BACK])\n").upper()
+        if choice == 'B':
+            terminal_sequence(user_id, window)
+        else:
+            top_level_choice(choice)
+
+    def top_level_choice(choice):
+        if choice == 'E':
+            category_choice = input("\nWhich category would you like to edit? (S [SA]/ F [FA])\n").upper()
+        if choice == 'A':
+            category_choice = input("\nWhich category would you like to add to? (S [SA]/ F [FA])\n").upper()
+        category_options(choice, category_choice)
+
+    def category_options(choice, category_choice):
+        if choice == 'E':
+            option = input("Would you like to edit its percentage or categories? (P/C)\n").upper()
+        if choice == "A":
+            option = "C"
+        sub_category_choice(choice, category_choice, option)
+
+    def sub_category_choice(choice, category_choice, option):
+        split_category = 'SA' if category_choice == 'S' else 'FA'
+        if choice == 'E':
+            if option == "C":
+                sub_category = input("Which sub-category would you like to edit?\n").title()
+                sub_category_option = input("\nWould you like to edit its percentage or assessments? (P/A)\n").upper()
+                if sub_category_option == 'P':
+                    percentage_prompt(category_choice, sub_category)
+                else:
+                    # assessments edit weewooweewoo
+                    pass
+            else:
+                percentage_prompt(category_choice)
+
+        if choice == "A":
+            print(bcolors.OKGREEN + f"Adding a sub-category under {split_category}" + bcolors.ENDC)
+            sub_category_label = input("Name of sub-category: ").title()
+            sub_category_percentage = float(input("Percentage of sub-category (0.01 - 1.00): "))
+            create_category(user_id, subject_name, quarter, split_category, sub_category_label, sub_category_percentage)
+
 
 def terminal_sequence(user_id, window):
     while True:
