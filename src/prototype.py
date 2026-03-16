@@ -208,9 +208,17 @@ def view_quarter(user_id):
             else:
                 assessments_view(user_id, quarter_choice, subject_choice)
 
-def assessments_view(user_id, quarter, subject):
+
+def assessments_view(user_id, quarter, subject_name):
     quarter_data = get_quarter_data(user_id, quarter)
-    subject_data = quarter_data["subject_choice"]
+    for subject in quarter_data:
+        if subject[subject_name] is not None:
+            subject_data = subject[subject_name]
+            break
+    else:
+        # raise exception
+        pass
+
     assessments = subject_data["assessments"]
     
     for top_level_category in assessments.keys():
@@ -222,6 +230,7 @@ def assessments_view(user_id, quarter, subject):
         sub_categories = top_level["categories"]
         for sub_category in sub_categories:
             # parse through sub_categs then print out existing ones
+            print("debug")
             pass
 
 def terminal_sequence(user_id, window):
