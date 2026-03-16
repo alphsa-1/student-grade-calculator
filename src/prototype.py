@@ -21,7 +21,7 @@ def save_json(filename, data):
 
 ## HOMEPAGE AUTH
 def auth(username, password):
-    users = load_json("src/users.json")
+    users = load_json("users.json")
 
     if username not in users:
         print(bcolors.BADRED + "Username or password is incorrect." + bcolors.ENDC)
@@ -35,7 +35,7 @@ def auth(username, password):
     return None
 
 def create_blank_userdata(user_id):
-    userdata = load_json("src/userdata.json")
+    userdata = load_json("userdata.json")
 
     userdata[str(user_id)] = {
         "quarters": [
@@ -46,10 +46,10 @@ def create_blank_userdata(user_id):
         ]
     }
 
-    save_json("src/userdata.json", userdata)
+    save_json("userdata.json", userdata)
 
 def signup(username, password):
-    users = load_json("src/users.json")
+    users = load_json("users.json")
 
     if username in users:
         print(bcolors.BADRED + "Username already exists!" + bcolors.ENDC)
@@ -62,7 +62,7 @@ def signup(username, password):
         new_id = highest_id + 1
 
     users[username] = {"_id": new_id, "password": password}
-    save_json("src/users.json", users)
+    save_json("users.json", users)
     create_blank_userdata(new_id)
 
     print(bcolors.OKGREEN + "Signup successful!\n" + bcolors.ENDC)
@@ -91,13 +91,13 @@ def auth_sequence():
 ## DATA PARSERS
 # helpers
 def get_user_data(user_id):
-    userdata = load_json("src/userdata.json")
+    userdata = load_json("userdata.json")
     return userdata.get(str(user_id))
 
 def save_user_data(user_id, user_data):
-    userdata = load_json("src/userdata.json")
+    userdata = load_json("userdata.json")
     userdata[str(user_id)] = user_data
-    save_json("src/userdata.json", userdata)
+    save_json("userdata.json", userdata)
 
 def get_quarter(user_data, quarter_number):
     for quarter in user_data["quarters"]:
@@ -182,14 +182,15 @@ def view_quarter(user_id):
                     print("/n")
                     continue
             else:
-                assessments_view(user_id)
+                assessments_view(user_id, quarter_choice)
 
-def assessments_view(user_id):
-    pass
+def assessments_view(user_id, quarter):
+    quarter_data = get_quarter_data(user_id, quarter)
+    
 
 def terminal_sequence(user_id, window):
     while True:
-        print("n\(Check the window opened for reference!)")
+        print("\n(Check the window opened for reference!)")
         choice = input("Do you want to add a new subject or edit a quarter's assessments? (S/Q/X)\n").upper()
 
         if choice == "S":
