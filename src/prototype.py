@@ -147,14 +147,37 @@ def create_category(user_id, subject_name, quarter, top_level_category, label, p
             subject_data = subject[subject_name]
             break
     else:
-        # call view quarter again and raise exception
-        pass
+        print(bcolors.BADRED + "Subject not found!" + bcolors.ENDC)
+        quarter_window.after(0, quarter_window.destroy)
+        view_quarter(user_id)
     
     sub_categories = subject_data["assessments"][top_level_category]["categories"]
     sub_categories.append({"label": label, "percentage": percentage, "assessments": []})
     
     save_quarter_data(user_id, quarter, quarter_data)
+
+def create_assessment(user_id, subject_name, quarter, top_level_category, sub_category_name, label, score_obtained, maximum_score):
+    quarter_data = get_quarter_data(user_id, quarter)
+
+    for subject in quarter_data:
+        if subject[subject_name] is not None:
+            subject_data = subject[subject_name]
+            break
+    else:
+        print(bcolors.BADRED + "Subject not found!" + bcolors.ENDC)
+        assessments_view(user_id, quarter, subject_name)
+
+    sub_categories = subject_data["assessments"][top_level_category]["categories"]
+    for sub_category in sub_categories:
+        if sub_category["label"] == sub_category_name:
+            sub_category_data = sub_category
+            break
+    else:
+        print(bcolors.BADRED + "Sub-category not found!" + bcolors.ENDC)
+        assessments_view(user_id, quarter, subject_name)
     
+    sub_category_data["assessments"].append({"label": label, "score_obtained": score_obtained, "maximum_score": maximum_score})
+    save_quarter_data(user_id, quarter, quarter_data)
 
 def is_subject_new(subject_name, user_id):
     if any(subject_name == subject["name"] for subject in get_user_data(user_id)["subjects"]):
@@ -224,69 +247,72 @@ def display_assessments(assessments):
     for category in assessments.keys():
         top_level = assessments[category]
         print(bcolors.SPLITCAT + f"Category {category}: " + bcolors.ENDC)
-        print(f"Percentage: {top_level["percentage"] if top_level["percentage"] is not None else '* required'}")
+        print(f"Percentage: {top_level['percentage'] if top_level['percentage'] is not None else '* required'}")
         print(f"Sub-categories:\n")
 
         sub_categories = top_level["categories"]
         for sub_category in sub_categories:
             print(bcolors.SUBCAT + f"Sub-category {sub_category['label']}:" + bcolors.ENDC)
-            print(f"Percentage: {sub_category["percentage"]}")
+            print(f"Percentage: {sub_category['percentage']}")
             print(f"Assessments:\n")
 
             for assessment in sub_category["assessments"]:
-                print("bababowee")
-                # have not implemented assessment creation
-                print(bcolors.ASSESS + f"Assessment {assessment["label"]}: " + bcolors.ENDC)
-                print(f"Score Obtained: {assessment["score_obtained"]}")
-                print(f"Maximum Score: {assessment["max_score"]}\n")
+                print(bcolors.ASSESS + f"Assessment {assessment['label']}: " + bcolors.ENDC)
+                print(f"Score Obtained: {assessment['score_obtained']}")
+                print(f"Maximum Score: {assessment['maximum_score']}\n")
 
 def assessments_view(user_id, quarter, subject_name):
-    global window
+    global window, quarter_table_window
     quarter_data = get_quarter_data(user_id, quarter)
     for subject in quarter_data:
         if subject[subject_name] is not None:
             subject_data = subject[subject_name]
             break
     else:
-        raise LookupError
+        print(bcolors.BADRED + "Subject not found!" + bcolors.ENDC)
+        quarter_window.after(0, quarter_window.destroy)
+        view_quarter(user_id)
 
     assessments = subject_data["assessments"]
     display_assessments(assessments)
 
     def percentage_prompt(category_choice, sub_category_choice = None):
+        split_category = 'SA' if category_choice == 'S' else 'FA'
         if sub_category_choice is not None:
             percentage = float(input(f"Enter new percentage for {sub_category_choice} under {category_choice} (0.01 to 1.00): "))
-            for category in assessments["SA" if category_choice == "S" else "FA"]["categories"]:
+            for category in assessments[split_category]["categories"]:
                 if sub_category := category[sub_category_choice] is not None:
                     sub_category["percentage"] = percentage
                     break
             else:
-                print(bcolors.BADRED + "Sub-category not on list!\n" + bcolors.ENDC)
+                print(bcolors.BADRED + "Subject not found!" + bcolors.ENDC)
                 assessments_view(user_id, quarter, subject_name)
 
         else:
             percentage = float(input(f"Enter new percentage for {category_choice} (0.01 to 1.00): "))
-            assessments["SA" if category_choice == "S" else "FA"]["categories"]["percentage"] = percentage
+            assessments[split_category]["percentage"] = percentage
         save_quarter_data(user_id, quarter, quarter_data)
+        display_assessments(assessments)
+        assessments_view(user_id, quarter, subject_name)
 
     def assessment_choice():
         choice = input("Would you like to edit a value or add an assessment? (E [EDIT]/ A [ADD]/B [BACK])\n").upper()
         if choice == 'B':
             terminal_sequence(user_id, window)
-        else:
+        elif choice == 'A' or choice == "E":
             top_level_choice(choice)
 
     def top_level_choice(choice):
         if choice == 'E':
             category_choice = input("\nWhich category would you like to edit? (S [SA]/ F [FA])\n").upper()
-        if choice == 'A':
+        elif choice == 'A':
             category_choice = input("\nWhich category would you like to add to? (S [SA]/ F [FA])\n").upper()
         category_options(choice, category_choice)
 
     def category_options(choice, category_choice):
         if choice == 'E':
-            option = input("Would you like to edit its percentage or categories? (P/C)\n").upper()
-        if choice == "A":
+            option = input("\nWould you like to edit its percentage or categories? (P/C)\n").upper()
+        elif choice == "A":
             option = "C"
         sub_category_choice(choice, category_choice, option)
 
@@ -294,22 +320,60 @@ def assessments_view(user_id, quarter, subject_name):
         split_category = 'SA' if category_choice == 'S' else 'FA'
         if choice == 'E':
             if option == "C":
-                sub_category = input("Which sub-category would you like to edit?\n").title()
+                sub_category = input("\nWhich sub-category would you like to edit?\n").title()
                 sub_category_option = input("\nWould you like to edit its percentage or assessments? (P/A)\n").upper()
                 if sub_category_option == 'P':
                     percentage_prompt(category_choice, sub_category)
-                else:
-                    # assessments edit weewooweewoo
+                elif sub_category_option == 'A':
+                    bottom_assessment_choice(category_choice, sub_category)
                     pass
-            else:
+            elif option == "P":
                 percentage_prompt(category_choice)
 
-        if choice == "A":
-            print(bcolors.OKGREEN + f"Adding a sub-category under {split_category}" + bcolors.ENDC)
-            sub_category_label = input("Name of sub-category: ").title()
-            sub_category_percentage = float(input("Percentage of sub-category (0.01 - 1.00): "))
-            create_category(user_id, subject_name, quarter, split_category, sub_category_label, sub_category_percentage)
+        elif choice == "A":
+            sub_category_option = input("\nWould you like to add a sub-category or an assessment? (S/A)\n").upper()
 
+            if sub_category_option == "S":
+                print(bcolors.OKGREEN + f"\nAdding a sub-category under {split_category}" + bcolors.ENDC)
+                sub_category_label = input("Name of sub-category: ").title()
+                sub_category_percentage = float(input("Percentage of sub-category (0.01 - 1.00): "))
+                create_category(user_id, subject_name, quarter, split_category, sub_category_label, sub_category_percentage)
+
+            elif sub_category_option == "A":
+                sub_category = input("\nWhich sub-category would you like to add an assessment to?\n").title()
+                assessment_label = input("Name of assessment: ").title()
+                score_obtained = float(input("Score obtained: "))
+                maximum_score = float(input("Maximum score possible: "))
+                create_assessment(user_id, subject_name, quarter, split_category, sub_category, assessment_label, score_obtained, maximum_score)
+
+    def bottom_assessment_choice(category_choice, sub_categ):
+        split_category = 'SA' if category_choice == 'S' else 'FA'
+        assessment = input("\nWhich assessment would you like to edit?\n").title()
+
+        for sub_category in assessments[split_category]["categories"]:
+            if sub_category["label"] == sub_categ:
+                sub_category_data = sub_category
+                break
+        else:
+            print(bcolors.BADRED + "Subject not found!" + bcolors.ENDC)
+            assessments_view(user_id, quarter, subject_name)
+        
+        assessment_option = input("\nWould you like to edit its score, or maximum? (S/M)\n").upper()
+        assessment_options = {"S": 'score_obtained', "M": 'maximum_score'}
+
+        if assessment_option == "S":
+            new_value = float(input("New score obtained: "))
+        elif assessment_option == "M":
+            new_value = float(input("New maximum score: "))
+        
+        for _assessment in sub_category_data["assessments"]:
+            if _assessment["label"] == assessment:
+                _assessment[assessment_options[assessment_option]] = new_value
+        
+        save_quarter_data(user_id, quarter, quarter_data)
+        display_assessments(assessments)
+    
+    assessment_choice()
 
 def terminal_sequence(user_id, window):
     while True:
@@ -331,7 +395,7 @@ def terminal_sequence(user_id, window):
 def refresh_quarter_table(user_id, quarter):
     global quarter_table
     for row in quarter_table.get_children():
-        table.delete(row)
+        quarter_table.delete(row)
     
     user_data = get_user_data(user_id)
     quarter_data = get_quarter_data(user_id, quarter)
@@ -412,10 +476,6 @@ def sequence(user_id):
     window.mainloop()
 def main():
     if user_id := auth_sequence():
-        #sequence(user_id)
-
-        create_subject(user_id, "Mathematics", 1.7)
-        create_category(user_id, "Mathematics", 2, "SA", "Long Test", 0.35)
-        assessments_view(1, 2, "Mathematics")
+        sequence(user_id)
 
 main()
