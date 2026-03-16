@@ -166,9 +166,11 @@ def get_quarter_data(user_id, quarter):
 
 def save_quarter_data(user_id, quarter, quarter_data):
     user_data = get_user_data(user_id)
+
+    for subject, q_data in zip(sorted(user_data["subjects"], key=lambda x: x["name"]), quarter_data):
+        subject["quarters"][quarter - 1] = q_data[subject["name"]]
     
-    for subject, q_data in zip(sorted(user_data["subjects"], key=lambda x: x["name"]), sorted(quarter_data, key=lambda x: x["name"])):
-        subject["quarters"][quarter - 1] = quarter_data.values()[0]
+    save_user_data(user_id, user_data)
 
 ## GUI (TERMINAL)
 def add_new_subject(user_id):
@@ -208,6 +210,8 @@ def view_quarter(user_id):
             else:
                 assessments_view(user_id, quarter_choice, subject_choice)
 
+def display_assessments(assessments):
+    pass
 
 def assessments_view(user_id, quarter, subject_name):
     quarter_data = get_quarter_data(user_id, quarter)
@@ -220,7 +224,8 @@ def assessments_view(user_id, quarter, subject_name):
         pass
 
     assessments = subject_data["assessments"]
-    
+    display_assessments(assessments)
+
     for top_level_category in assessments.keys():
         top_level = assessments[top_level_category]
         percentage = float(input("\nPlease enter category percentage (decimal):\n"))
@@ -334,8 +339,8 @@ def sequence(user_id):
     window.mainloop()
 def main():
     if user_id := auth_sequence():
-        sequence(user_id)
+        #sequence(user_id)
     
-        create_category(user_id, "Mathematics", 1, "SA", "Long Test", 0.35)
+        create_category(user_id, "Mathematics", 2, "SA", "Long Test", 0.35)
 
 main()
