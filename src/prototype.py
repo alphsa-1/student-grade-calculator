@@ -163,18 +163,18 @@ def view_quarter(user_id):
     global window
     quarter_table_window()
     refresh_quarter_table(user_id, quarter_choice)
-    first_choice = input("Would you like to edit a subject's assessments? (P [PICK]/B [BACK])\n").upper()
+    first_choice = input("\nWould you like to edit a subject's assessments? (P [PICK]/B [BACK])\n").upper()
     if first_choice == "B":
         quarter_window.after(0, quarter_window.destroy)
         terminal_sequence(user_id, window)
 
     if first_choice == "P":
         while True:
-            subject_choice = input("Which subject do you want to edit?\n").title()
+            subject_choice = input("\nWhich subject do you want to edit?\n").title()
         
             if subject_choice not in [subject["name"] for subject in get_user_data(user_id)["subjects"]]:
                 print(bcolors.BADRED + "Subject not found!" + bcolors.ENDC)
-                return_choice = input("Return to homepage? (Y/N)\n").upper()
+                return_choice = input("\nReturn to homepage? (Y/N)\n").upper()
                 if return_choice == "Y":
                     quarter_window.after(0, quarter_window.destroy)
                     terminal_sequence(user_id, window)
@@ -189,7 +189,7 @@ def assessments_view(user_id):
 
 def terminal_sequence(user_id, window):
     while True:
-        print("(Check the window opened for reference!)")
+        print("n\(Check the window opened for reference!)")
         choice = input("Do you want to add a new subject or edit a quarter's assessments? (S/Q/X)\n").upper()
 
         if choice == "S":
