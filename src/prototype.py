@@ -130,15 +130,17 @@ def create_subject(user_id, name, unit):
     )
     save_user_data(user_id, user_data)
 
-def create_assessment(user_id, subject_name, quarter, top_level_category, label, score_obtained, score_max):
+def create_category(user_id, subject_name, quarter, top_level_category, label, percentage):   
     quarter_data = get_quarter_data(user_id, quarter)
-    subject_data = quarter_data[subject_name]
-    top_level = subject_data["assessments"][top_level_category]["categories"]
-    top_level["label"] = label
-    top_level["score_obtained"] = score_obtained
-    top_level["score_max"] = score_max
     
-    # save quarter, then save user_data
+    for subject in quarter_data:
+        if subject[subject_name] is not None:
+            subject_data = subject[subject_name]
+    
+    top_level = subject_data["assessments"][top_level_category]["categories"]
+    top_level[label] = {"percentage": percentage, "assessments": []}
+    
+    print(quarter_data)
     
 
 def is_subject_new(subject_name, user_id):
@@ -157,7 +159,13 @@ def get_quarter_data(user_id, quarter):
         subjects.append(formatted)
     
     return subjects
-            
+
+def save_quarter_data(user_id, quarter, quarter_data):
+    user_data = get_user_data(user_id)
+    
+    for subject, q_data in zip(sorted(user_data["subjects"], key=lambda: x["name"]), sorted(quarter_data, key=lambda: x["name"])):
+        subject["quarters"][quarter - 1] = quarter_data.values()[0]
+
 ## GUI (TERMINAL)
 def add_new_subject(user_id):
     global window
@@ -210,7 +218,7 @@ def assessments_view(user_id, quarter, subject):
         sub_categories = top_level["categories"]
         for sub_category in sub_categories:
             # parse through sub_categs then print out existing ones
-            
+            pass
 
 def terminal_sequence(user_id, window):
     while True:
@@ -313,6 +321,8 @@ def sequence(user_id):
     window.mainloop()
 def main():
     if user_id := auth_sequence():
-        sequence(user_id)
+    #    sequence(user_id)
+    
+        create_category(user_id, "Mathematics", 1, "SA", "Long Test", 0.35)
 
 main()
