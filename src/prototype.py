@@ -120,7 +120,7 @@ def create_subject(user_id, name, unit):
             "unit": unit,
             "quarters": [
                 {"quarter": i + 1, "assessments": {"SA": {"percentage": None, "categories": {}},
-                                                   "FA": {"percentage": None, "categories":{}}
+                                                   "FA": {"percentage": None, "categories": {}}
                                                    }, "grade": None, "passed": None}
                 for i in range(4)
             ],
@@ -183,11 +183,23 @@ def view_quarter(user_id):
                     print("/n")
                     continue
             else:
-                assessments_view(user_id, quarter_choice)
+                assessments_view(user_id, quarter_choice, subject_choice)
 
-def assessments_view(user_id, quarter):
+def assessments_view(user_id, quarter, subject):
     quarter_data = get_quarter_data(user_id, quarter)
+    subject_data = quarter_data["subject_choice"]
+    assessments = subject_data["assessments"]
     
+    for top_level_category in assessments.keys():
+        top_level = assessments[top_level_category]
+        percentage = float(input("\nPlease enter category percentage (decimal):\n"))
+        top_level["percentage"] = percentage
+        print("\nAssessments sub-categories: ")
+        
+        sub_categories = top_level["categories"]
+        for sub_category in sub_categories:
+            # parse through sub_categs then print out existing ones
+            
 
 def terminal_sequence(user_id, window):
     while True:
