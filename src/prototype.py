@@ -9,6 +9,9 @@ class bcolors:
     ENDC = '\033[0m'
     BADRED = '\033[91m'
     OKGREEN = '\033[92m'
+    SPLITCAT = '\033[93m'
+    SUBCAT = '\033[94m'
+    ASSESS = '\033[96m'
 
 # json file helpers
 def load_json(filename):
@@ -113,14 +116,20 @@ def create_blank_user_data(user_id):
     }
 
 def create_subject(user_id, name, unit):
+    global window
     user_data = get_user_data(user_id)
+    for subject in user_data["subjects"]:
+        if name == subject["name"]:
+            print(bcolors.BADRED + "Subject already exists!" + bcolors.ENDC)
+            terminal_sequence(user_id, window)
+
     user_data["subjects"].append(
         {
             "name": name,
             "unit": unit,
             "quarters": [
-                {"quarter": i + 1, "assessments": {"SA": {"percentage": None, "categories": {}},
-                                                   "FA": {"percentage": None, "categories": {}}
+                {"quarter": i + 1, "assessments": {"SA": {"percentage": None, "categories": []},
+                                                   "FA": {"percentage": None, "categories": []}
                                                    }, "grade": None, "passed": None}
                 for i in range(4)
             ],
@@ -141,8 +150,8 @@ def create_category(user_id, subject_name, quarter, top_level_category, label, p
         # call view quarter again and raise exception
         pass
     
-    top_level = subject_data["assessments"][top_level_category]["categories"]
-    top_level[label] = {"percentage": percentage, "assessments": []}
+    sub_categories = subject_data["assessments"][top_level_category]["categories"]
+    sub_categories.append({"label": label, "percentage": percentage, "assessments": []})
     
     save_quarter_data(user_id, quarter, quarter_data)
     
@@ -211,7 +220,25 @@ def view_quarter(user_id):
                 assessments_view(user_id, quarter_choice, subject_choice)
 
 def display_assessments(assessments):
-    pass
+    print("")
+    for category in assessments.keys():
+        top_level = assessments[category]
+        print(bcolors.SPLITCAT + f"Category {category}: " + bcolors.ENDC)
+        print(f"Percentage: {top_level["percentage"] if top_level["percentage"] is not None else 0}")
+        print(f"Sub-categories:\n")
+
+        sub_categories = top_level["categories"]
+        for sub_category in sub_categories:
+            print(bcolors.SUBCAT + f"Sub-category {sub_category['label']}:" + bcolors.ENDC)
+            print(f"Percentage: {sub_category["percentage"]}")
+            print(f"Assessments:\n")
+
+            for assessment in sub_category["assessments"]:
+                print("bababowee")
+                # have not implemented assessment creation
+                print(bcolors.ASSESS + f"Assessment {assessment["label"]}: " + bcolors.ENDC)
+                print(f"Score Obtained: {assessment["score_obtained"]}")
+                print(f"Maximum Score: {assessment["max_score"]}\n")
 
 def assessments_view(user_id, quarter, subject_name):
     quarter_data = get_quarter_data(user_id, quarter)
@@ -226,6 +253,7 @@ def assessments_view(user_id, quarter, subject_name):
     assessments = subject_data["assessments"]
     display_assessments(assessments)
 
+    # ignore these, placeholders
     for top_level_category in assessments.keys():
         top_level = assessments[top_level_category]
         percentage = float(input("\nPlease enter category percentage (decimal):\n"))
@@ -340,7 +368,9 @@ def sequence(user_id):
 def main():
     if user_id := auth_sequence():
         #sequence(user_id)
-    
+
+        create_subject(user_id, "Mathematics", 1.7)
         create_category(user_id, "Mathematics", 2, "SA", "Long Test", 0.35)
+        assessments_view(1, 2, "Mathematics")
 
 main()
