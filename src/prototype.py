@@ -21,7 +21,7 @@ def save_json(filename, data):
 
 ## HOMEPAGE AUTH
 def auth(username, password):
-    users = load_json("users.json")
+    users = load_json("src/users.json")
 
     if username not in users:
         print(bcolors.BADRED + "Username or password is incorrect." + bcolors.ENDC)
@@ -35,7 +35,7 @@ def auth(username, password):
     return None
 
 def create_blank_userdata(user_id):
-    userdata = load_json("userdata.json")
+    userdata = load_json("src/userdata.json")
 
     userdata[str(user_id)] = {
         "quarters": [
@@ -46,10 +46,10 @@ def create_blank_userdata(user_id):
         ]
     }
 
-    save_json("userdata.json", userdata)
+    save_json("src/userdata.json", userdata)
 
 def signup(username, password):
-    users = load_json("users.json")
+    users = load_json("src/users.json")
 
     if username in users:
         print(bcolors.BADRED + "Username already exists!" + bcolors.ENDC)
@@ -62,7 +62,7 @@ def signup(username, password):
         new_id = highest_id + 1
 
     users[username] = {"_id": new_id, "password": password}
-    save_json("users.json", users)
+    save_json("src/users.json", users)
     create_blank_userdata(new_id)
 
     print(bcolors.OKGREEN + "Signup successful!\n" + bcolors.ENDC)
@@ -91,13 +91,13 @@ def auth_sequence():
 ## DATA PARSERS
 # helpers
 def get_user_data(user_id):
-    userdata = load_json("userdata.json")
+    userdata = load_json("src/userdata.json")
     return userdata.get(str(user_id))
 
 def save_user_data(user_id, user_data):
-    userdata = load_json("userdata.json")
+    userdata = load_json("src/userdata.json")
     userdata[str(user_id)] = user_data
-    save_json("userdata.json", userdata)
+    save_json("src/userdata.json", userdata)
 
 def get_quarter(user_data, quarter_number):
     for quarter in user_data["quarters"]:
@@ -136,11 +136,15 @@ def create_category(user_id, subject_name, quarter, top_level_category, label, p
     for subject in quarter_data:
         if subject[subject_name] is not None:
             subject_data = subject[subject_name]
+            break
+    else:
+        # call view quarter again and raise exception
+        pass
     
     top_level = subject_data["assessments"][top_level_category]["categories"]
     top_level[label] = {"percentage": percentage, "assessments": []}
     
-    print(quarter_data)
+    save_quarter_data(user_id, quarter, quarter_data)
     
 
 def is_subject_new(subject_name, user_id):
@@ -163,7 +167,7 @@ def get_quarter_data(user_id, quarter):
 def save_quarter_data(user_id, quarter, quarter_data):
     user_data = get_user_data(user_id)
     
-    for subject, q_data in zip(sorted(user_data["subjects"], key=lambda: x["name"]), sorted(quarter_data, key=lambda: x["name"])):
+    for subject, q_data in zip(sorted(user_data["subjects"], key=lambda x: x["name"]), sorted(quarter_data, key=lambda x: x["name"])):
         subject["quarters"][quarter - 1] = quarter_data.values()[0]
 
 ## GUI (TERMINAL)
@@ -246,8 +250,8 @@ def refresh_quarter_table(user_id, quarter):
     quarter_data = get_quarter_data(user_id, quarter)
     for subject, quarter in zip(user_data["subjects"], quarter_data):
         name = subject["name"]
-        grade = quarter_data.values()[0]["grade"]
-        passed = quarter_data.values()[0]["passed"]
+        grade = quarter.values()["grade"]
+        passed = quarter.values()["passed"]
         quarter_table.insert("", tk.END, values=(name, grade, passed))
 
 def quarter_table_window():
@@ -321,7 +325,7 @@ def sequence(user_id):
     window.mainloop()
 def main():
     if user_id := auth_sequence():
-    #    sequence(user_id)
+        sequence(user_id)
     
         create_category(user_id, "Mathematics", 1, "SA", "Long Test", 0.35)
 
