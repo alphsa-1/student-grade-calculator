@@ -1,5 +1,103 @@
 {
     "1": {
-        "subjects": []
+        "subjects": [
+            {
+                "name": "Mathematics",
+                "unit": 1.7,
+                "quarters": [
+                    {
+                        "quarter": 1,
+                        "assessments": {
+                            "SA": {
+                                "percentage": null,
+                                "categories": []
+                            },
+                            "FA": {
+                                "percentage": null,
+                                "categories": []
+                            }
+                        },
+                        "grade": null,
+                        "passed": null
+                    },
+                    {
+                        "quarter": 2,
+                        "assessments": {
+                            "SA": {
+                                "percentage": 0.7,
+                                "categories": [
+                                    {
+                                        "label": "Long Test",
+                                        "percentage": 0.65,
+                                        "assessments": [
+                                            {
+                                                "label": "Long Test 1",
+                                                "score_obtained": 30,
+                                                "maximum_score": 35
+                                            },
+                                            {
+                                                "label": "Long Test 2",
+                                                "score_obtained": 32,
+                                                "maximum_score": 40
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            "FA": {
+                                "percentage": 0.3,
+                                "categories": [
+                                    {
+                                        "label": "Quiz",
+                                        "percentage": 0.35,
+                                        "assessments": [
+                                            {
+                                                "label": "Quiz 1",
+                                                "score_obtained": 12.0,
+                                                "maximum_score": 15
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        "grade": null,
+                        "passed": null
+                    },
+                    {
+                        "quarter": 3,
+                        "assessments": {
+                            "SA": {
+                                "percentage": null,
+                                "categories": []
+                            },
+                            "FA": {
+                                "percentage": null,
+                                "categories": []
+                            }
+                        },
+                        "grade": null,
+                        "passed": null
+                    },
+                    {
+                        "quarter": 4,
+                        "assessments": {
+                            "SA": {
+                                "percentage": null,
+                                "categories": []
+                            },
+                            "FA": {
+                                "percentage": null,
+                                "categories": []
+                            }
+                        },
+                        "grade": null,
+                        "passed": null
+                    }
+                ],
+                "final": null,
+                "classification": null
+            }
+        ]
     }
 }
