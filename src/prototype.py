@@ -130,6 +130,17 @@ def create_subject(user_id, name, unit):
     )
     save_user_data(user_id, user_data)
 
+def create_assessment(user_id, subject_name, quarter, top_level_category, label, score_obtained, score_max):
+    quarter_data = get_quarter_data(user_id, quarter)
+    subject_data = quarter_data[subject_name]
+    top_level = subject_data["assessments"][top_level_category]["categories"]
+    top_level["label"] = label
+    top_level["score_obtained"] = score_obtained
+    top_level["score_max"] = score_max
+    
+    # save quarter, then save user_data
+    
+
 def is_subject_new(subject_name, user_id):
     if any(subject_name == subject["name"] for subject in get_user_data(user_id)["subjects"]):
         return False
