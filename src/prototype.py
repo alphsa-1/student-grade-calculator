@@ -142,7 +142,8 @@ def get_quarter_data(user_id, quarter):
 
     subjects = []
     for subject in user_data["subjects"]:
-        subjects.append(subject["quarters"][quarter - 1])
+        formatted = {subject["name"]:  subject["quarters"][quarter - 1]}
+        subjects.append(formatted)
     
     return subjects
             
@@ -214,8 +215,8 @@ def refresh_quarter_table(user_id, quarter):
     quarter_data = get_quarter_data(user_id, quarter)
     for subject, quarter in zip(user_data["subjects"], quarter_data):
         name = subject["name"]
-        grade = quarter_data[0]["grade"]
-        passed = quarter_data[0]["passed"]
+        grade = quarter_data.values()[0]["grade"]
+        passed = quarter_data.values()[0]["passed"]
         quarter_table.insert("", tk.END, values=(name, grade, passed))
 
 def quarter_table_window():
