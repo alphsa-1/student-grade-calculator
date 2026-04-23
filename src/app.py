@@ -394,9 +394,9 @@ def signup():
     # Creates new user
     try:
         _user_id = user_service.create(credentials["username"], credentials["password"])
-        return 200
+        return jsonify({"message": "success"}), 200
     except:
-        return 400
+        return jsonify({"error": "failed"}), 400
         
 @app.route("/login", methods=['POST'])
 def login():
@@ -414,9 +414,9 @@ def login():
     # Logins successfully
     if user is not None:
         _user_id = user["id"]
-        return {"userId": _user_id} # Returns user id to frontend
+        return jsonify({"userId": _user_id}), 200 # Returns user id to frontend
     else:
-        return 401 # Unsuccessful Login Attempt
+        return jsonify({"error": "failed"}), 401 # Unsuccessful Login Attempt
 
 def create_empty_subject_data(user_id, name, unit):
     subject_id = subject_service.create(user_id, name, unit)
@@ -628,6 +628,90 @@ def load_assessment_table(quarter_id):
         "categories": result
     }, 200
 
+@app.route("/calculate", methods=["POST"])
+def calculate():
+    data = request.get_json()
+
+    quarter_id = data["quarterId"]
+    categories = data["categories"]
+
+    conn = sqlite3.connect("src/grades.db")
+    cursor = conn.cursor()
+
+    # delete existing first
+    cursor.execute("""
+        DELETE FROM categories
+        WHERE quarter_id = ?
+    """, (quarter_id,))
+
+    # insert new and calculate
+    quarter_total = 0
+
+    for cat in categories:
+        # insert category
+        cursor.execute("""
+            INSERT INTO categories (type, percentage, quarter_id)
+            VALUES (?, ?, ?)
+        """, (cat["type"], cat["percentage"], quarter_id))
+
+        category_id = cursor.lastrowid
+
+        category_total = 0
+
+        for sub in cat["sub_categories"]:
+            cursor.execute("""
+                INSERT INTO sub_categories (label, percentage, category_id)
+                VALUES (?, ?, ?)
+            """, (sub["label"], sub["percentage"], category_id))
+
+            sub_id = cursor.lastrowid
+
+            sub_total = 0
+
+            for item in sub["items"]:
+                score_obtained = item["score_obtained"]
+                maximum_score = item["maximum_score"]
+
+                percent_score = (score_obtained / maximum_score) * 100 if maximum_score else 0
+
+                cursor.execute("""
+                    INSERT INTO items (label, score_obtained, maximum_score, sub_category_id)
+                    VALUES (?, ?, ?, ?)
+                """, (item["label"], score_obtained, maximum_score, sub_id))
+
+                sub_total += percent_score
+
+            # subcategory average
+            sub_avg = sub_total / len(sub["items"]) if sub["items"] else 0
+
+            category_total += sub_avg * (sub["percentage"] / 100)
+
+        # category weighted contribution
+        category_weighted = category_total * (cat["percentage"] / 100)
+
+        quarter_total += category_weighted
+
+    # compute final grade and remarks
+    final_grade = round(quarter_total, 2)
+
+    if final_grade >= 75:
+        passed = "Passed"
+    else:
+        passed = "Failed"
+
+    cursor.execute("""
+        UPDATE quarters
+        SET grade = ?, passed = ?
+        WHERE id = ?
+    """, (final_grade, passed, quarter_id))
+
+    conn.commit()
+
+    return jsonify({
+        "quarterId": quarter_id,
+        "finalGrade": final_grade,
+        "passed": passed
+    }), 200
 
 # Inject test data
 @app.route("/seed")

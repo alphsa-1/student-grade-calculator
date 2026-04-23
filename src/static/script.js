@@ -13,7 +13,9 @@ let assessmentState = { categories: [] };
 window.onload = () => {
   if (!userId) {
     loginModal.style.display = "block";
+    logoutButton.style.display = "none"
   } else {
+     logoutButton.style.display = "block"
     loadSubjects();
   }
 };
@@ -69,10 +71,29 @@ async function login() {
     localStorage.setItem("userId", userId);
 
     loginModal.style.display = "none";
+    logoutButton.style.display = "block";
     loadSubjects();
   } else {
     alert("Invalid login");
   }
+}
+
+function logout() {
+  localStorage.clear(); // wipes all stored keys
+
+  userId = null;
+  subjects = [];
+  assessmentState = { categories: [] };
+
+  // close all modals
+  loginModal.style.display = "block";
+  logoutButton.style.display = "none";
+  signupModal.style.display = "none";
+  subjectModal.style.display = "none";
+  quarterModal.style.display = "none";
+  assessmentModal.style.display = "none";
+
+  location.reload(); // optional hard reset
 }
 
 
@@ -171,7 +192,7 @@ function renderQuarter(data) {
           ${row.name}
         </td>
         <td>${row.grade || ""}</td>
-        <td>${row.remarks || ""}</td>
+        <td>${row.passed || ""}</td>
       </tr>
     `;
   });
@@ -358,7 +379,7 @@ function closeAssessment() {
 
 // ================= CALCULATE =================
 async function calculateQuarter() {
-  await fetch("/calculate", {
+  const res = await fetch("/calculate", {
     method: "POST",
     headers: {"Content-Type":"application/json"},
     body: JSON.stringify({
@@ -367,5 +388,10 @@ async function calculateQuarter() {
     })
   });
 
-  closeAssessment();
+  if (res.status == 200) {
+    alert("Success");
+    closeAssessment();
+  } else {
+    alert("Calculate failed!");
+  }
 }
