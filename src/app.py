@@ -4,6 +4,10 @@ import sqlite3
 # Flask framework start
 app = Flask(__name__)
 
+@app.route('/')
+def home():
+    return render_template('index.html')
+
 # Connects to database
 def get_db_connection(db_name):
     conn = sqlite3.connect(
@@ -59,11 +63,11 @@ def init_db():
 
     CREATE TABLE IF NOT EXISTS items (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        category_id INTEGER NOT NULL,
+        sub_category_id INTEGER NOT NULL,
         label TEXT NOT NULL,
         score_obtained REAL NOT NULL,
         maximum_score REAL NOT NULL,
-        FOREIGN KEY (category_id) REFERENCES sub_categories(id) ON DELETE CASCADE
+        FOREIGN KEY (sub_category_id) REFERENCES sub_categories(id) ON DELETE CASCADE
     );
     """)
 
@@ -265,7 +269,7 @@ class GradeService:
 
             result[type_] = {
                 "percentage": percentage,
-                "sub_categories": self.get_categories(at_id)
+                "sub_categories": self.get_sub_categories(at_id)
             }
 
         return result
@@ -382,13 +386,21 @@ user_service = UserService(db)
 grade_service = GradeService(db)
 subject_service = SubjectService(db, grade_service)
 
-def signup(name, password):
+@app.route("/signup", methods=['POST'])
+def signup():
+    credentials = request.json
     global _user_id
-
+    
     # Creates new user
-    _user_id = user_service.create(name, password)
-
-def login(name, password):
+    try:
+        _user_id = user_service.create(credentials["username"], credentials["password"])
+        return 200
+    except:
+        return 400
+        
+@app.route("/login", methods=['POST'])
+def login():
+    credentials = request.json
     global _user_id
 
     # Searches for matching credentials
@@ -396,13 +408,13 @@ def login(name, password):
     cursor = conn.cursor()
     user = cursor.execute(
         "SELECT * FROM users WHERE name = ? AND password = ?",
-        (name, password,)
+        (credentials["username"], credentials["password"])
     ).fetchone()
 
     # Logins successfully
     if user is not None:
         _user_id = user["id"]
-        return _user_id # Returns user id to frontend
+        return {"userId": _user_id} # Returns user id to frontend
     else:
         return 401 # Unsuccessful Login Attempt
 
@@ -458,7 +470,164 @@ def compute_subject_gwa(subject_id):
             gwa = (quarter_grade * (2/3)) + (gwa * (1/3))
 
     return gwa
+
+# Subjects routes
+@app.route("/subjects/<int:user_id>/<int:subject_id>", methods=["PUT"])
+def update_subject(user_id, subject_id):
+    data = request.json
+    subject_service.update(subject_id, data["name"], data["unit"])
+
+    return jsonify({"message": "success"}), 200
+
+@app.route("/subjects/<int:user_id>", methods=["POST"])
+def create_subject(user_id):
+    data = request.json
+    try:
+        subj_id = subject_service.create(user_id, data["name"], data["unit"])
+        for i in range(1, 5):
+            grade_service.create_quarter(subj_id, i)
+
+        return jsonify({"message": "success"}), 201
+    except:
+        return jsonify({"error": "Create failed"}), 422
     
+
+@app.route("/subjects/<int:user_id>", methods=["GET"])
+def load_card_table(user_id):
+    conn = get_db_connection("src/grades.db")
+    cursor = conn.cursor()
+    cursor.execute("""
+    SELECT 
+        s.id,
+        s.name, 
+        s.unit,
+
+        MAX(CASE WHEN q.quarter = 1 THEN q.grade END) AS quarter1Grade,
+        MAX(CASE WHEN q.quarter = 2 THEN q.grade END) AS quarter2Grade,
+        MAX(CASE WHEN q.quarter = 3 THEN q.grade END) AS quarter3Grade,
+        MAX(CASE WHEN q.quarter = 4 THEN q.grade END) AS quarter4Grade
+
+    FROM subjects s
+    LEFT JOIN quarters q ON q.subject_id = s.id
+
+    WHERE s.user_id = ?
+
+    GROUP BY s.id, s.name, s.unit
+    ORDER BY s.id ASC;
+    """, (user_id,))
+
+    rows = cursor.fetchall()
+
+    subjects = [dict(row) for row in rows]
+
+    return jsonify(subjects), 200
+
+# Quarters routes
+@app.route("/quarters/<int:user_id>/<int:quarter>", methods=["GET"])
+def load_quarter_table(user_id, quarter):
+    conn = get_db_connection("src/grades.db")
+    cursor = conn.cursor()
+    cursor.execute("""
+    SELECT 
+        q.id,
+        s.name, 
+        q.grade,
+        q.passed
+
+    FROM subjects s
+    LEFT JOIN quarters q ON q.subject_id = s.id AND q.quarter = ?
+
+    WHERE s.user_id = ?
+    GROUP BY s.id, s.name, s.unit
+    ORDER BY s.id ASC;
+    """, (quarter, user_id))
+
+    rows = cursor.fetchall()
+
+    subjects = [dict(row) for row in rows]
+
+    return jsonify(subjects), 200
+
+# Assessments routes
+@app.route("/assessments/<int:quarter_id>", methods=["GET"])
+def load_assessment_table(quarter_id):
+    conn = get_db_connection("src/grades.db")
+    cursor = conn.cursor()
+
+    # get categories first
+    cursor.execute("""
+        SELECT id, type, percentage
+        FROM categories
+        WHERE quarter_id = ?
+        ORDER BY id
+    """, (quarter_id,))
+    categories_rows = cursor.fetchall()
+
+    categories = {
+        row["id"]: {
+            "id": row["id"],
+            "type": row["type"],
+            "percentage": row["percentage"],
+            "sub_categories": {}
+        }
+        for row in categories_rows
+    }
+
+    category_ids = tuple(categories.keys()) or (0,)
+
+    # then sub categories
+    cursor.execute(f"""
+        SELECT id, label, percentage, category_id
+        FROM sub_categories
+        WHERE category_id IN ({",".join(["?"] * len(category_ids))})
+    """, category_ids)
+
+    sub_rows = cursor.fetchall()
+
+    sub_map = {}
+
+    for row in sub_rows:
+        sub_map[row["id"]] = {
+            "id": row["id"],
+            "label": row["label"],
+            "percentage": row["percentage"],
+            "category_id": row["category_id"],
+            "items": []
+        }
+        # remap each sub category to each category
+        categories[row["category_id"]]["sub_categories"][row["id"]] = sub_map[row["id"]]
+
+    sub_ids = tuple(sub_map.keys()) or (0,)
+
+    # finally get items
+    cursor.execute(f"""
+        SELECT id, label, score_obtained, maximum_score, sub_category_id
+        FROM items
+        WHERE sub_category_id IN ({",".join(["?"] * len(sub_ids))})
+    """, sub_ids)
+
+    item_rows = cursor.fetchall()
+
+    # append each item to its corresponding sub category
+    for row in item_rows:
+        sub_map[row["sub_category_id"]]["items"].append({
+            "id": row["id"],
+            "label": row["label"],
+            "score_obtained": row["score_obtained"],
+            "maximum_score": row["maximum_score"]
+        })
+
+    # now collate
+    result = []
+
+    for cat in categories.values():
+        cat["sub_categories"] = list(cat["sub_categories"].values())
+        result.append(cat)
+
+    return {
+        "categories": result
+    }, 200
+
 
 # Inject test data
 @app.route("/seed")
@@ -477,14 +646,14 @@ def seed_data():
     at = grade_service.get_category(quarter_id, "SA")
     at_id = at["id"]
 
-    grade_service.create_sub_category(at_id, "Long Test", 0.5)
+    grade_service.create_sub_category(at_id, "Long Test", 1)
 
     cat = grade_service.get_sub_category(at_id, "Long Test")
     cat_id = cat["id"]
 
     grade_service.create_item(cat_id, "Long Test 1", 37, 40)
 
-    return jsonify({"message": "seeded successfully"})
+    return jsonify({"message": "seeded successfully", "grade": compute_quarter_grade(1, 1)})
 
 # Debug
 @app.route("/fresh")
@@ -492,6 +661,7 @@ def refresh():
     conn = get_db_connection("src/grades.db")
     cursor = conn.cursor()
     cursor.executescript("""
+    DROP TABLE users;
     DROP TABLE subjects;
     DROP TABLE quarters;
     DROP TABLE sub_categories;

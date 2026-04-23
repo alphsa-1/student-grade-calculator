@@ -1,7 +1,119 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <title>Student Grade Calculator</title>
-        <link rel="stylesheet" href="/static/style.css">
-    </head>
+<head>
+  <title>Grade System</title>
+
+  <style>
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    th { background: #eee; }
+    .clickable { cursor: pointer; color: blue; }
+    .box { border:1px solid black; margin:10px; padding:10px; }
+    .modal {
+      display:none;
+      position:fixed;
+      top:20%;
+      left:35%;
+      background:white;
+      padding:20px;
+      border:1px solid black;
+      z-index:999;
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- ================= LOGIN MODAL ================= -->
+<div id="loginModal" class="modal">
+  <h2>Login</h2>
+
+  <input id="loginUser" placeholder="username"><br><br>
+  <input id="loginPass" type="password" placeholder="password"><br><br>
+
+  <button onclick="login()">Login</button>
+  <button onclick="openSignup()">Sign Up</button>
+</div>
+
+<!-- ================= SIGNUP MODAL ================= -->
+<div id="signupModal" class="modal">
+  <h2>Sign Up</h2>
+
+  <input id="signupUser" placeholder="username"><br><br>
+  <input id="signupPass" type="password" placeholder="password"><br><br>
+
+  <button onclick="signup()">Create</button>
+  <button onclick="closeSignup()">Back</button>
+</div>
+
+<hr>
+
+<!-- ================= GRADES TABLE ================= -->
+<h2>Grades</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>
+        Subject
+        <button onclick="openSubjectModal()">+</button>
+      </th>
+
+      <th onclick="openQuarterModal(1)" style="cursor:pointer;">Q1</th>
+      <th onclick="openQuarterModal(2)" style="cursor:pointer;">Q2</th>
+      <th onclick="openQuarterModal(3)" style="cursor:pointer;">Q3</th>
+      <th onclick="openQuarterModal(4)" style="cursor:pointer;">Q4</th>
+
+      <th>Final</th>
+      <th>Unit</th>
+      <th>Classification</th>
+    </tr>
+  </thead>
+
+  <tbody id="gradesBody"></tbody>
+</table>
+
+<!-- ================= SUBJECT MODAL ================= -->
+<div id="subjectModal" class="modal">
+  <h3>Subject Modal</h3>
+
+  <input id="subjectInput" placeholder="Subject"><br><br>
+  <input id="unitInput" placeholder="Unit"><br><br>
+
+  <button onclick="saveSubject()">Save</button>
+  <button onclick="closeSubjectModal()">Close</button>
+</div>
+
+<!-- ================= QUARTER MODAL ================= -->
+<div id="quarterModal" class="modal" style="width:60%; left:20%;">
+  <h2 id="quarterTitle"></h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Subject</th>
+        <th>Grade</th>
+        <th>Remarks</th>
+      </tr>
+    </thead>
+    <tbody id="quarterBody"></tbody>
+  </table>
+
+  <button onclick="closeQuarterModal()">Close</button>
+</div>
+
+<!-- ================= ASSESSMENT MODAL ================= -->
+<div id="assessmentModal" class="modal" style="width:80%; left:10%; height:80%; overflow:auto;">
+  <h2>Assessment</h2>
+
+  <div id="assessmentContainer"></div>
+
+  <br>
+  <button onclick="calculateQuarter()">Calculate</button>
+  <button onclick="closeAssessment()">Close</button>
+</div>
+
+<script src="../static/script.js"></script>
+
+</body>
 </html>
