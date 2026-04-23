@@ -667,24 +667,26 @@ def calculate():
             sub_id = cursor.lastrowid
 
             sub_total = 0
+            total_score_obtained = 0
+            total_maximum_score = 0
 
             for item in sub["items"]:
                 score_obtained = item["score_obtained"]
                 maximum_score = item["maximum_score"]
 
                 percent_score = (score_obtained / maximum_score) * 100 if maximum_score else 0
+                total_score_obtained += score_obtained
+                total_maximum_score += maximum_score
 
                 cursor.execute("""
                     INSERT INTO items (label, score_obtained, maximum_score, sub_category_id)
                     VALUES (?, ?, ?, ?)
                 """, (item["label"], score_obtained, maximum_score, sub_id))
 
-                sub_total += percent_score
-
             # subcategory average
-            sub_avg = sub_total / len(sub["items"]) if sub["items"] else 0
+            sub_total = (total_score_obtained / total_maximum_score) * 100
 
-            category_total += sub_avg * (sub["percentage"] / 100)
+            category_total += sub_total * (sub["percentage"] / 100)
 
         # category weighted contribution
         category_weighted = category_total * (cat["percentage"] / 100)

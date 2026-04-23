@@ -334,8 +334,8 @@ function editItem(id) {
       if (!i) continue;
 
       i.label = prompt("Label", i.label);
-      i.score = parseFloat(prompt("Score", i.score));
-      i.max_score = parseFloat(prompt("Max", i.max_score));
+      i.score_obtained = parseFloat(prompt("Score", i.score_obtained));
+      i.maximum_score = parseFloat(prompt("Max", i.maximum_score));
 
       renderAssessment();
       return;
