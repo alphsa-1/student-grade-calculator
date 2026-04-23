@@ -51,10 +51,10 @@ def init_db():
 
     CREATE TABLE IF NOT EXISTS sub_categories (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        assessment_type_id INTEGER NOT NULL,
+        category_id INTEGER NOT NULL,
         label TEXT NOT NULL,
         percentage REAL,
-        FOREIGN KEY (assessment_type_id) REFERENCES categories(id) ON DELETE CASCADE
+        FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
     );
 
     CREATE TABLE IF NOT EXISTS items (
@@ -171,7 +171,7 @@ class SubjectService:
             commit=True
         )
 	
-    # Gets the entire data of a subject
+    # Gets the entire data of the user
     def get_full_subjects(self, user_id):
         subjects = self.db.execute(
             "SELECT id, name, unit FROM subjects WHERE user_id=?",
@@ -222,7 +222,7 @@ class GradeService:
 
             result.append({
                 "quarter": quarter,
-                "assessments": self.get_assessment_types(quarter_id),
+                "assessments": self.get_categories(quarter_id),
                 "grade": grade,
                 "passed": passed
             })
@@ -272,20 +272,19 @@ class GradeService:
 
     # Get specifc category using type and quarter id
     def get_category(self, quarter_id, type):
-        assessment_type = self.db.execute(
+        category = self.db.execute(
             "SELECT * FROM categories WHERE quarter_id = ? AND type = ?",
             (quarter_id, type,)
         ).fetchone()
 
-        print(assessment_type)
-        return assessment_type
+        return category
 
     ## SUB-CATEGORY
 
     # Creates a sub-category entry
     def create_sub_category(self, category_id, label, percentage):
         cursor = self.db.execute(
-            """INSERT INTO sub_categories (assessment_type_id, label, percentage)
+            """INSERT INTO sub_categories (category_id, label, percentage)
                VALUES (?, ?, ?)""",
             (category_id, label, percentage),
             commit=True
@@ -295,7 +294,7 @@ class GradeService:
     # Returns all sub-categories of a category
     def get_sub_categories(self, category_id):
         rows = self.db.execute(
-            "SELECT id, label, percentage FROM sub_categories WHERE assessment_type_id=?",
+            "SELECT id, label, percentage FROM sub_categories WHERE category_id=?",
             (category_id,)
         ).fetchall()
 
@@ -315,7 +314,7 @@ class GradeService:
     # Returns a category based off its label and category id
     def get_sub_category(self, category_id, label):
         category = self.db.execute(
-            "SELECT * FROM sub_categories WHERE assessment_type_id = ? AND label = ?",
+            "SELECT * FROM sub_categories WHERE category_id = ? AND label = ?",
             (category_id, label,)
         ).fetchone()
 
@@ -403,6 +402,7 @@ def login(name, password):
     # Logins successfully
     if user is not None:
         _user_id = user["id"]
+        return _user_id # Returns user id to frontend
     else:
         return 401 # Unsuccessful Login Attempt
 
@@ -413,6 +413,52 @@ def create_empty_subject_data(user_id, name, unit):
         grade_service.create_category(quarter_id, "SA", 0)
         grade_service.create_category(quarter_id, "FA", 0)
 
+def compute_sub_category_grade(sub_category):
+    obtained_sum = 0
+    maximum_sum = 0
+
+    for item in sub_category["assessments"]:
+        obtained_sum += item["score_obtained"]
+        maximum_sum += item["maximum_score"]
+
+    if maximum_sum == 0:
+        return 0
+
+    raw = obtained_sum / maximum_sum
+    return raw * sub_category["percentage"]
+
+def compute_category_grade(category_data):
+    total = 0
+
+    for sub in category_data["sub_categories"]:
+        total += compute_sub_category_grade(sub)
+
+    return total * (category_data["percentage"] or 0)
+
+def compute_quarter_grade(subject_id, quarter_number):
+    quarter = grade_service.get_quarter(quarter_number, subject_id)
+    quarter_id = quarter["id"]
+
+    categories = grade_service.get_categories(quarter_id)
+
+    sa = compute_category_grade(categories["SA"]) * categories["SA"]["percentage"]
+    fa = compute_category_grade(categories["FA"]) * categories["FA"]["percentage"]
+
+    return sa + fa
+
+def compute_subject_gwa(subject_id):
+    gwa = None
+
+    for q in range(1, 5):
+        quarter_grade = compute_quarter_grade(subject_id, q)
+
+        if gwa is None:
+            gwa = quarter_grade
+        else:
+            gwa = (quarter_grade * (2/3)) + (gwa * (1/3))
+
+    return gwa
+    
 
 # Inject test data
 @app.route("/seed")
