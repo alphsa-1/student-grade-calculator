@@ -696,6 +696,7 @@ def calculate():
     # compute final grade and remarks
     final_grade = round(quarter_total, 2)
 
+    # convert
     if final_grade >= 75:
         passed = "Passed"
     else:
