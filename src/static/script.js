@@ -45,7 +45,7 @@ async function signup() {
   });
 
   if (res.status == 200) {
-    alert("Account created");
+    alert("Account successfully created.");
   }
   else {
     alert("User already exists!");
@@ -74,7 +74,7 @@ async function login() {
     logoutButton.style.display = "block";
     loadSubjects();
   } else {
-    alert("Invalid login");
+    alert("User does not exist or invalid credentials!");
   }
 }
 
@@ -418,9 +418,9 @@ async function calculateQuarter() {
   });
 
   if (res.status == 200) {
-    alert("Success");
+    alert("Calculated successfully.");
     closeAssessment();
   } else {
-    alert("Calculate failed!");
+    alert("Calculation failed, Invalid parameters! (Check percentages, it must sum up to 100%)");
   }
 }
