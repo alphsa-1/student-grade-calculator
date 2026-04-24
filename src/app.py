@@ -330,7 +330,7 @@ class GradeService:
     def create_item(self, sub_category_id, label, score, max_score):
         self.db.execute(
             """INSERT INTO items 
-               (category_id, label, score_obtained, maximum_score)
+               (sub_category_id, label, score_obtained, maximum_score)
                VALUES (?, ?, ?, ?)""",
             (sub_category_id, label, score, max_score),
             commit=True
@@ -358,7 +358,7 @@ class GradeService:
     def get_items(self, sub_category_id):
         rows = self.db.execute(
             """SELECT label, score_obtained, maximum_score 
-            FROM items WHERE category_id=?""",
+            FROM items WHERE sub_category_id = ?""",
             (sub_category_id,)
         ).fetchall()
 
@@ -374,7 +374,7 @@ class GradeService:
     # Gets a specific item based off its label and sub-category id
     def get_item(self, sub_category_id, label):
         item = self.db.execute(
-            "SELECT * FROM items WHERE category_id = ? AND label = ?",
+            "SELECT * FROM items WHERE sub_category_id = ? AND label = ?",
             (sub_category_id, label,)
         )
 
@@ -453,23 +453,169 @@ def compute_quarter_grade(subject_id, quarter_number):
 
     categories = grade_service.get_categories(quarter_id)
 
-    sa = compute_category_grade(categories["SA"]) * categories["SA"]["percentage"]
-    fa = compute_category_grade(categories["FA"]) * categories["FA"]["percentage"]
+    sa = compute_category_grade(categories["SA"])
+    fa = compute_category_grade(categories["FA"])
 
     return sa + fa
 
-def compute_subject_gwa(subject_id):
-    gwa = None
+def compute_quarter_gwa(user_id, quarter_number):
 
-    for q in range(1, 5):
-        quarter_grade = compute_quarter_grade(subject_id, q)
+    conn = get_db_connection("src/grades.db")
+    cursor = conn.cursor()
 
-        if gwa is None:
-            gwa = quarter_grade
-        else:
-            gwa = (quarter_grade * (2/3)) + (gwa * (1/3))
+    cursor.execute("""
+        SELECT s.unit, q.grade
+        FROM subjects s
+        JOIN quarters q ON q.subject_id = s.id
+        WHERE s.user_id = ? AND q.quarter = ?
+    """, (user_id, quarter_number))
 
-    return gwa
+    rows = cursor.fetchall()
+
+    total_weighted = 0
+    total_units = 0
+
+    for row in rows:
+        unit = row["unit"]
+        grade = row["grade"]
+
+        if grade is not None:
+            total_weighted += grade * unit
+            total_units += unit
+
+    if total_units == 0:
+        return None
+
+    return total_weighted / total_units
+
+def compute_subject_final(subject_id):
+    conn = get_db_connection("src/grades.db")
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT grade
+        FROM quarters
+        WHERE subject_id = ?
+        ORDER BY quarter ASC
+    """, (subject_id,))
+
+    rows = cursor.fetchall()
+
+    values = [row["grade"] for row in rows if row["grade"] is not None]
+
+    if not values:
+        return None
+
+    result = convert(values[0])
+
+    for quarter in values[1:]:
+        result = cascade_quarter_grade(result, convert(quarter))
+
+    return result
+
+def compute_final_gwa(user_id):
+    conn = get_db_connection("src/grades.db")
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT id, unit
+        FROM subjects
+        WHERE user_id = ?
+    """, (user_id,))
+
+    subjects = cursor.fetchall()
+
+    total_weighted = 0
+    total_units = 0
+
+    for subject in subjects:
+        subject_id = subject["id"]
+        unit = subject["unit"]
+
+        final = compute_subject_final(subject_id)
+        print(final, unit)
+
+        if final is not None:
+            total_weighted += final * unit
+            total_units += unit
+
+    if total_units == 0:
+        return None
+
+    return round(total_weighted / total_units, 2)
+
+def classify_gwa(gwa):
+    if gwa is None:
+        return None
+    if gwa <= 1.50:
+        return "Director's Lister"
+    elif gwa <= 2.25:
+        return "Standard"
+    elif gwa <= 3.00:
+        return "Sub-Standard"
+    elif gwa <= 4.00:
+        return "Probation"
+    elif gwa == 5.00:
+        return "Termination"
+
+def cascade_quarter_grade(current, quarter_grade):
+    current = (current * (1/3)) + (quarter_grade * (2/3))
+    # truncate to 3 decimal places
+    current = int(current * 1000) / 1000
+
+    if 1.000 <= current <= 1.125:
+        return 1.00
+    elif 1.126 <= current <= 1.375:
+        return 1.25
+    elif 1.376 <= current <= 1.625:
+        return 1.50
+    elif 1.626 <= current <= 1.875:
+        return 1.75
+    elif 1.876 <= current <= 2.125:
+        return 2.00
+    elif 2.126 <= current <= 2.375:
+        return 2.25
+    elif 2.376 <= current <= 2.625:
+        return 2.50
+    elif 2.626 <= current <= 2.875:
+        return 2.75
+    elif 2.876 <= current <= 3.500:
+        return 3.00
+    elif 3.501 <= current <= 4.500:
+        return 4.00
+    elif 4.501 <= current <= 5.000:
+        return 5.00
+    else:
+        return None  # invalid grade
+
+def convert(raw):
+    converted = 0
+    if raw is None:
+        return None
+    elif raw >= 96:
+        converted = 1.00
+    elif raw >= 90:
+        converted = 1.25
+    elif raw >= 84:
+        converted = 1.50
+    elif raw >= 78:
+        converted = 1.75
+    elif raw >= 72:
+        converted = 2.00
+    elif raw >= 66:
+        converted = 2.25
+    elif raw >= 60:
+        converted = 2.50
+    elif raw >= 55:
+        converted = 2.75
+    elif raw >= 50:
+        converted = 3.00
+    elif raw >= 40:
+        converted = 4.00
+    else:
+        converted = 5.00
+    
+    return converted
 
 # Subjects routes
 @app.route("/subjects/<int:user_id>/<int:subject_id>", methods=["PUT"])
@@ -489,13 +635,13 @@ def create_subject(user_id):
 
         return jsonify({"message": "success"}), 201
     except:
-        return jsonify({"error": "Create failed"}), 422
-    
+        return jsonify({"error": "Create failed"}), 422   
 
 @app.route("/subjects/<int:user_id>", methods=["GET"])
 def load_card_table(user_id):
     conn = get_db_connection("src/grades.db")
     cursor = conn.cursor()
+
     cursor.execute("""
     SELECT 
         s.id,
@@ -518,9 +664,53 @@ def load_card_table(user_id):
 
     rows = cursor.fetchall()
 
-    subjects = [dict(row) for row in rows]
+    subjects = []
 
-    return jsonify(subjects), 200
+    for row in rows:
+        subject = dict(row)
+
+        subject_id = subject["id"]
+
+        # compute subject final
+        final = compute_subject_final(subject_id)
+        subject["final"] = final
+        subject["classification"] = classify_gwa(subject["final"])
+
+        # convert quarter grades
+        for quarter in ["quarter1Grade", "quarter2Grade", "quarter3Grade", "quarter4Grade"]:
+            subject[quarter] = convert(subject[quarter])
+
+        subjects.append(subject)
+
+    q1 = compute_quarter_gwa(user_id, 1)
+    q2 = compute_quarter_gwa(user_id, 2)
+    q3 = compute_quarter_gwa(user_id, 3)
+    q4 = compute_quarter_gwa(user_id, 4)
+
+    final_gwa = compute_final_gwa(user_id)
+
+    # total units
+    cursor.execute("""
+        SELECT SUM(unit) as total_units
+        FROM subjects
+        WHERE user_id = ?
+    """, (user_id,))
+    total_units = cursor.fetchone()["total_units"] or 0
+
+    gwa_data = {
+        "q1": convert(q1),
+        "q2": convert(q2),
+        "q3": convert(q3),
+        "q4": convert(q4),
+        "final": final_gwa,
+        "units": total_units,
+        "classification": classify_gwa(final_gwa)
+    }
+
+    return jsonify({
+        "subjects": subjects,
+        "gwa": gwa_data
+    }), 200
 
 # Quarters routes
 @app.route("/quarters/<int:user_id>/<int:quarter>", methods=["GET"])
@@ -545,6 +735,11 @@ def load_quarter_table(user_id, quarter):
     rows = cursor.fetchall()
 
     subjects = [dict(row) for row in rows]
+
+    for subject in subjects:
+            converted_grade = convert(subject["grade"])
+            subject["grade"] = converted_grade
+            subject["passed"] = classify_gwa(subject["grade"])
 
     return jsonify(subjects), 200
 
@@ -696,8 +891,9 @@ def calculate():
     # compute final grade and remarks
     final_grade = round(quarter_total, 2)
 
-    # convert
-    if final_grade >= 75:
+    converted_grade = convert(final_grade)
+
+    if converted_grade >= 60:
         passed = "Passed"
     else:
         passed = "Failed"
@@ -711,10 +907,11 @@ def calculate():
     conn.commit()
 
     return jsonify({
-        "quarterId": quarter_id,
-        "finalGrade": final_grade,
+        "quarter_id": quarter_id,
+        "raw_grade": final_grade,
+        "converted_grade": converted_grade,
         "passed": passed
-    }), 200
+}), 200
 
 # Inject test data
 @app.route("/seed")

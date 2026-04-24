@@ -100,7 +100,11 @@ function logout() {
 // ================= SUBJECTS =================
 async function loadSubjects() {
   const res = await fetch(`/subjects/${userId}`);
-  subjects = await res.json();
+  const data = await res.json();
+
+  subjects = data.subjects;
+  gwa = data.gwa;
+
   renderTable();
 }
 
@@ -123,8 +127,21 @@ function renderTable() {
       </tr>
     `;
   }
-}
 
+// ===== GWA ROW =====
+  body.innerHTML += `
+  <tr class="gwa-row">
+    <td><strong>GWA</strong></td>
+    <td>${gwa?.q1 ?? ""}</td>
+    <td>${gwa?.q2 ?? ""}</td>
+    <td>${gwa?.q3 ?? ""}</td>
+    <td>${gwa?.q4 ?? ""}</td>
+    <td><strong>${gwa?.final ?? ""}</strong></td>
+    <td>${gwa?.units ?? ""}</td>
+    <td>${gwa?.classification ?? ""}</td>
+  </tr>
+  `;
+}
 
 // ================= SUBJECT MODAL =================
 function openSubjectModal() {
@@ -345,14 +362,22 @@ function editItem(id) {
 
 
 // ================= DELETE FUNCTIONS =================
-function deleteCategory(id) {
+async function deleteCategory(id) {
+  await fetch(`/categories/${id}`, {
+    method: "DELETE"
+  });
+
   assessmentState.categories =
     assessmentState.categories.filter(c => c.id !== id);
 
   renderAssessment();
 }
 
-function deleteSubCategory(id) {
+async function deleteSubCategory(id) {
+  await fetch(`/subcategories/${id}`, {
+    method: "DELETE"
+  });
+
   for (const c of assessmentState.categories) {
     c.sub_categories =
       c.sub_categories.filter(s => s.id !== id);
@@ -361,7 +386,11 @@ function deleteSubCategory(id) {
   renderAssessment();
 }
 
-function deleteItem(id) {
+async function deleteItem(id) {
+  await fetch(`/items/${id}`, {
+    method: "DELETE"
+  });
+
   for (const c of assessmentState.categories) {
     for (const s of c.sub_categories) {
       s.items = s.items.filter(i => i.id !== id);
