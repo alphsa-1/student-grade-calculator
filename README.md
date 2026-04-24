@@ -31,4 +31,4 @@ Please report any bugs or gaps in the program to improve the user experience.
 MIT License
 
 ## Contact
-Email: mfkasala@cbzrc.pshs.edu.ph
+Email: mgkasala@cbzrc.pshs.edu.ph
